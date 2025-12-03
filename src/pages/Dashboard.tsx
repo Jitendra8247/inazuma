@@ -1,0 +1,299 @@
+// Dashboard Page - Organizer dashboard with stats and tournament management
+
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { 
+  Trophy, Users, DollarSign, Calendar, Plus, 
+  MoreVertical, Eye, Edit, Trash2, TrendingUp 
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import StatsCard from '@/components/dashboard/StatsCard';
+import { useAuth } from '@/context/AuthContext';
+import { useTournaments } from '@/context/TournamentContext';
+import { useToast } from '@/hooks/use-toast';
+import { Link } from 'react-router-dom';
+
+export default function Dashboard() {
+  const { user } = useAuth();
+  const { tournaments, createTournament, deleteTournament } = useTournaments();
+  const { toast } = useToast();
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+
+  // Mock organizer stats
+  const organizerStats = {
+    totalTournaments: tournaments.length,
+    totalParticipants: tournaments.reduce((acc, t) => acc + t.registeredTeams, 0),
+    totalPrizePool: tournaments.reduce((acc, t) => acc + t.prizePool, 0),
+    activeTournaments: tournaments.filter(t => t.status === 'ongoing').length
+  };
+
+  // Create tournament handler
+  const handleCreateTournament = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsCreating(true);
+
+    const formData = new FormData(e.currentTarget);
+    
+    const result = await createTournament({
+      name: formData.get('name') as string,
+      game: 'BGMI',
+      mode: formData.get('mode') as string,
+      prizePool: parseInt(formData.get('prizePool') as string),
+      entryFee: parseInt(formData.get('entryFee') as string) || 0,
+      maxTeams: parseInt(formData.get('maxTeams') as string),
+      startDate: formData.get('startDate') as string,
+      endDate: formData.get('endDate') as string,
+      status: 'upcoming',
+      image: '/placeholder.svg',
+      description: formData.get('description') as string,
+      rules: ['Standard tournament rules apply'],
+      organizer: user?.username || 'Unknown',
+      region: 'India',
+      platform: 'Mobile'
+    });
+
+    setIsCreating(false);
+    setIsCreateDialogOpen(false);
+
+    if (result.success) {
+      toast({
+        title: 'Tournament Created!',
+        description: 'Your tournament has been created successfully.',
+      });
+    }
+  };
+
+  const handleDeleteTournament = (id: string, name: string) => {
+    deleteTournament(id);
+    toast({
+      title: 'Tournament Deleted',
+      description: `${name} has been deleted.`,
+    });
+  };
+
+  return (
+    <main className="min-h-screen py-8">
+      <div className="container mx-auto px-4">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8"
+        >
+          <div>
+            <h1 className="font-display text-3xl md:text-4xl font-bold mb-2">
+              Organizer Dashboard
+            </h1>
+            <p className="text-muted-foreground">
+              Welcome back, {user?.username}! Manage your tournaments here.
+            </p>
+          </div>
+          
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="neon">
+                <Plus className="h-4 w-4 mr-2" />
+                Create Tournament
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle className="font-display">Create New Tournament</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleCreateTournament} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Tournament Name</Label>
+                  <Input id="name" name="name" placeholder="Enter tournament name" required />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="mode">Mode</Label>
+                    <select
+                      id="mode"
+                      name="mode"
+                      className="w-full h-10 px-3 rounded-md border border-input bg-background"
+                      required
+                    >
+                      <option value="Solo">Solo</option>
+                      <option value="Duo">Duo</option>
+                      <option value="Squad">Squad</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="maxTeams">Max Teams</Label>
+                    <Input id="maxTeams" name="maxTeams" type="number" placeholder="100" required />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="prizePool">Prize Pool (₹)</Label>
+                    <Input id="prizePool" name="prizePool" type="number" placeholder="100000" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="entryFee">Entry Fee (₹)</Label>
+                    <Input id="entryFee" name="entryFee" type="number" placeholder="0" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="startDate">Start Date</Label>
+                    <Input id="startDate" name="startDate" type="date" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="endDate">End Date</Label>
+                    <Input id="endDate" name="endDate" type="date" required />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea id="description" name="description" placeholder="Tournament description..." rows={3} />
+                </div>
+                <Button type="submit" variant="neon" className="w-full" disabled={isCreating}>
+                  {isCreating ? 'Creating...' : 'Create Tournament'}
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </motion.div>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <StatsCard
+            title="Total Tournaments"
+            value={organizerStats.totalTournaments}
+            icon={Trophy}
+            variant="primary"
+            index={0}
+          />
+          <StatsCard
+            title="Total Participants"
+            value={organizerStats.totalParticipants}
+            icon={Users}
+            variant="secondary"
+            index={1}
+          />
+          <StatsCard
+            title="Total Prize Pool"
+            value={`₹${(organizerStats.totalPrizePool / 100000).toFixed(1)}L`}
+            icon={DollarSign}
+            variant="accent"
+            index={2}
+          />
+          <StatsCard
+            title="Active Tournaments"
+            value={organizerStats.activeTournaments}
+            icon={TrendingUp}
+            change="+2 this week"
+            changeType="positive"
+            index={3}
+          />
+        </div>
+
+        {/* Tournaments Table */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="rounded-lg bg-card border border-border/50 overflow-hidden"
+        >
+          <div className="p-4 border-b border-border/50">
+            <h2 className="font-display text-lg font-semibold">Your Tournaments</h2>
+          </div>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-muted/50">
+                <tr>
+                  <th className="text-left p-4 text-sm font-medium text-muted-foreground">Tournament</th>
+                  <th className="text-left p-4 text-sm font-medium text-muted-foreground">Status</th>
+                  <th className="text-left p-4 text-sm font-medium text-muted-foreground">Teams</th>
+                  <th className="text-left p-4 text-sm font-medium text-muted-foreground">Prize</th>
+                  <th className="text-left p-4 text-sm font-medium text-muted-foreground">Date</th>
+                  <th className="text-right p-4 text-sm font-medium text-muted-foreground">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tournaments.slice(0, 5).map((tournament) => (
+                  <tr key={tournament.id} className="border-t border-border/50 hover:bg-muted/20">
+                    <td className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded bg-gradient-to-br from-primary/20 to-secondary/20" />
+                        <div>
+                          <p className="font-medium">{tournament.name}</p>
+                          <p className="text-xs text-muted-foreground">{tournament.game} • {tournament.mode}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      <span className={`px-2 py-1 rounded text-xs ${
+                        tournament.status === 'upcoming' ? 'bg-accent/20 text-accent' :
+                        tournament.status === 'ongoing' ? 'bg-primary/20 text-primary' :
+                        'bg-muted text-muted-foreground'
+                      }`}>
+                        {tournament.status}
+                      </span>
+                    </td>
+                    <td className="p-4 text-sm">
+                      {tournament.registeredTeams}/{tournament.maxTeams}
+                    </td>
+                    <td className="p-4 text-sm font-medium">
+                      ₹{tournament.prizePool.toLocaleString()}
+                    </td>
+                    <td className="p-4 text-sm text-muted-foreground">
+                      {new Date(tournament.startDate).toLocaleDateString()}
+                    </td>
+                    <td className="p-4 text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem asChild>
+                            <Link to={`/tournaments/${tournament.id}`}>
+                              <Eye className="h-4 w-4 mr-2" />
+                              View
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem>
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            className="text-destructive"
+                            onClick={() => handleDeleteTournament(tournament.id, tournament.name)}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </motion.div>
+      </div>
+    </main>
+  );
+}
