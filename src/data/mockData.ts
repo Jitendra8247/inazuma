@@ -16,6 +16,7 @@ export interface Tournament {
   description: string;
   rules: string[];
   organizer: string;
+  organizerId: string;
   region: string;
   platform: string;
 }
@@ -80,6 +81,7 @@ export const mockTournaments: Tournament[] = [
       'Match disputes must be reported within 15 minutes'
     ],
     organizer: 'Inazuma eSports',
+    organizerId: 'org1',
     region: 'India',
     platform: 'Mobile'
   },
@@ -104,6 +106,7 @@ export const mockTournaments: Tournament[] = [
       'Fair play policy enforced'
     ],
     organizer: 'CyberArena',
+    organizerId: 'org2',
     region: 'Asia Pacific',
     platform: 'Mobile'
   },
@@ -128,6 +131,7 @@ export const mockTournaments: Tournament[] = [
       'Strict anti-cheat measures'
     ],
     organizer: 'Storm Gaming',
+    organizerId: 'org1',
     region: 'Global',
     platform: 'Mobile'
   },
@@ -152,6 +156,7 @@ export const mockTournaments: Tournament[] = [
       'Age 16+'
     ],
     organizer: 'NextGen Gaming',
+    organizerId: 'org2',
     region: 'India',
     platform: 'Mobile'
   },
@@ -176,6 +181,7 @@ export const mockTournaments: Tournament[] = [
       'TPP perspective'
     ],
     organizer: 'Inazuma eSports',
+    organizerId: 'org1',
     region: 'India',
     platform: 'Mobile'
   },
@@ -200,6 +206,7 @@ export const mockTournaments: Tournament[] = [
       'Premium support'
     ],
     organizer: 'Elite Gaming Co',
+    organizerId: 'org2',
     region: 'South Asia',
     platform: 'Mobile'
   }

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
   User, Mail, Trophy, Target, Gamepad2, 
-  Wallet, Edit2, Save, X, Award 
+  Wallet, Edit2, Save, X, Award, Copy 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +20,16 @@ export default function Profile() {
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [editedUsername, setEditedUsername] = useState(user?.username || '');
+
+  const handleCopyUserId = () => {
+    if (user?.id) {
+      navigator.clipboard.writeText(user.id);
+      toast({
+        title: 'User ID Copied',
+        description: 'Your User ID has been copied to clipboard'
+      });
+    }
+  };
 
   const registrations = getRegistrationsByPlayer(user?.id || '');
 
@@ -123,6 +133,25 @@ export default function Profile() {
                       {user?.role === 'organizer' ? 'Organizer' : 'Player'}
                     </span>
                   </div>
+                  {user?.role === 'player' && (
+                    <div className="mt-3 p-3 rounded-lg bg-primary/10 border border-primary/20">
+                      <div className="flex items-center justify-between gap-2">
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">Your User ID (for receiving transfers)</p>
+                          <p className="font-mono text-sm font-semibold text-primary">{user?.id}</p>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={handleCopyUserId}
+                          className="shrink-0"
+                        >
+                          <Copy className="h-4 w-4 mr-1" />
+                          Copy
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
             </div>

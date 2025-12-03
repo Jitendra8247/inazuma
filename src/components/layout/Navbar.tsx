@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Zap, User, LogOut, LayoutDashboard, Trophy } from 'lucide-react';
+import { Menu, X, Zap, User, LogOut, LayoutDashboard, Trophy, Wallet, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
@@ -70,12 +70,42 @@ export default function Navbar() {
             {isAuthenticated ? (
               <>
                 {user?.role === 'organizer' && (
-                  <Button variant="ghost" size="sm" asChild>
-                    <Link to="/dashboard">
-                      <LayoutDashboard className="h-4 w-4 mr-2" />
-                      Dashboard
-                    </Link>
-                  </Button>
+                  <>
+                    <Button variant="ghost" size="sm" asChild>
+                      <Link to="/dashboard">
+                        <LayoutDashboard className="h-4 w-4 mr-2" />
+                        Dashboard
+                      </Link>
+                    </Button>
+                    <Button variant="ghost" size="sm" asChild>
+                      <Link to="/admin/players">
+                        <Users className="h-4 w-4 mr-2" />
+                        Players
+                      </Link>
+                    </Button>
+                    <Button variant="ghost" size="sm" asChild>
+                      <Link to="/admin/wallets">
+                        <Wallet className="h-4 w-4 mr-2" />
+                        Wallets
+                      </Link>
+                    </Button>
+                  </>
+                )}
+                {user?.role === 'player' && (
+                  <>
+                    <Button variant="ghost" size="sm" asChild>
+                      <Link to="/my-tournaments">
+                        <Trophy className="h-4 w-4 mr-2" />
+                        My Tournaments
+                      </Link>
+                    </Button>
+                    <Button variant="ghost" size="sm" asChild>
+                      <Link to="/wallet">
+                        <Wallet className="h-4 w-4 mr-2" />
+                        Wallet
+                      </Link>
+                    </Button>
+                  </>
                 )}
                 <Button variant="ghost" size="sm" asChild>
                   <Link to="/profile">
@@ -141,14 +171,52 @@ export default function Navbar() {
                 {isAuthenticated ? (
                   <>
                     {user?.role === 'organizer' && (
-                      <Link
-                        to="/dashboard"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className="flex items-center gap-2 py-2 text-muted-foreground"
-                      >
-                        <LayoutDashboard className="h-4 w-4" />
-                        Dashboard
-                      </Link>
+                      <>
+                        <Link
+                          to="/dashboard"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className="flex items-center gap-2 py-2 text-muted-foreground"
+                        >
+                          <LayoutDashboard className="h-4 w-4" />
+                          Dashboard
+                        </Link>
+                        <Link
+                          to="/admin/players"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className="flex items-center gap-2 py-2 text-muted-foreground"
+                        >
+                          <Users className="h-4 w-4" />
+                          Players
+                        </Link>
+                        <Link
+                          to="/admin/wallets"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className="flex items-center gap-2 py-2 text-muted-foreground"
+                        >
+                          <Wallet className="h-4 w-4" />
+                          Manage Wallets
+                        </Link>
+                      </>
+                    )}
+                    {user?.role === 'player' && (
+                      <>
+                        <Link
+                          to="/my-tournaments"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className="flex items-center gap-2 py-2 text-muted-foreground"
+                        >
+                          <Trophy className="h-4 w-4" />
+                          My Tournaments
+                        </Link>
+                        <Link
+                          to="/wallet"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className="flex items-center gap-2 py-2 text-muted-foreground"
+                        >
+                          <Wallet className="h-4 w-4" />
+                          My Wallet
+                        </Link>
+                      </>
                     )}
                     <Link
                       to="/profile"

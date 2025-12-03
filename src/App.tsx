@@ -8,6 +8,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "@/context/AuthContext";
 import { TournamentProvider } from "@/context/TournamentContext";
+import { WalletProvider } from "@/context/WalletContext";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import ProtectedRoute from "@/components/common/ProtectedRoute";
@@ -21,6 +22,10 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
+import Wallet from "./pages/Wallet";
+import AdminWallets from "./pages/AdminWallets";
+import AdminPlayers from "./pages/AdminPlayers";
+import MyTournaments from "./pages/MyTournaments";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,11 +34,12 @@ const App = () => (
   <HelmetProvider>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <TournamentProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
+        <WalletProvider>
+          <TournamentProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
               <div className="flex flex-col min-h-screen">
                 <Navbar />
                 <div className="flex-1">
@@ -61,6 +67,26 @@ const App = () => (
                         <Profile />
                       </ProtectedRoute>
                     } />
+                    <Route path="/wallet" element={
+                      <ProtectedRoute>
+                        <Wallet />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/my-tournaments" element={
+                      <ProtectedRoute>
+                        <MyTournaments />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/admin/wallets" element={
+                      <ProtectedRoute requiredRole="organizer">
+                        <AdminWallets />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/admin/players" element={
+                      <ProtectedRoute requiredRole="organizer">
+                        <AdminPlayers />
+                      </ProtectedRoute>
+                    } />
                     
                     {/* 404 Route */}
                     <Route path="*" element={<NotFound />} />
@@ -68,9 +94,10 @@ const App = () => (
                 </div>
                 <Footer />
               </div>
-            </BrowserRouter>
-          </TooltipProvider>
-        </TournamentProvider>
+              </BrowserRouter>
+            </TooltipProvider>
+          </TournamentProvider>
+        </WalletProvider>
       </AuthProvider>
     </QueryClientProvider>
   </HelmetProvider>

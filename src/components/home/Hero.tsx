@@ -4,8 +4,11 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Trophy, Zap, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/context/AuthContext';
 
 export default function Hero() {
+  const { isAuthenticated } = useAuth();
+
   return (
     <section className="relative min-h-[90vh] flex items-center overflow-hidden">
       {/* Background Effects */}
@@ -67,12 +70,22 @@ export default function Hero() {
                 Browse Tournaments
               </Link>
             </Button>
-            <Button variant="outline" size="xl" asChild>
-              <Link to="/register">
-                Get Started
-                <ChevronRight className="h-5 w-5 ml-2" />
-              </Link>
-            </Button>
+            {!isAuthenticated && (
+              <Button variant="outline" size="xl" asChild>
+                <Link to="/register">
+                  Get Started
+                  <ChevronRight className="h-5 w-5 ml-2" />
+                </Link>
+              </Button>
+            )}
+            {isAuthenticated && (
+              <Button variant="outline" size="xl" asChild>
+                <Link to="/dashboard">
+                  Go to Dashboard
+                  <ChevronRight className="h-5 w-5 ml-2" />
+                </Link>
+              </Button>
+            )}
           </motion.div>
 
           {/* Stats */}

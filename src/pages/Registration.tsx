@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useTournaments } from '@/context/TournamentContext';
 import { useAuth } from '@/context/AuthContext';
+import { useWallet } from '@/context/WalletContext';
 
 // Validation schema
 const registrationSchema = z.object({
@@ -40,6 +41,7 @@ export default function Registration() {
   const { toast } = useToast();
   const { getTournamentById, registerForTournament, isPlayerRegistered } = useTournaments();
   const { user, isAuthenticated } = useAuth();
+  const { wallet, deductTournamentFee } = useWallet();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const tournament = getTournamentById(id || '');
@@ -107,6 +109,39 @@ export default function Registration() {
   const onSubmit = async (data: RegistrationFormData) => {
     setIsSubmitting(true);
     
+    // Check if tournament has entry fee
+    if (tournament.entryFee > 0) {
+      // Check wallet balance
+      if (!wallet || wallet.balance < tournament.entryFee) {
+        setIsSubmitting(false);
+        toast({
+          title: 'Insufficient Balance',
+          description: `You need ₹${tournament.entryFee} in your wallet. Current balance: ₹${wallet?.balance || 0}`,
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      // Deduct tournament fee
+      const feeResult = await deductTournamentFee(
+        tournament.id,
+        tournament.name,
+        tournament.entryFee,
+        tournament.organizerId
+      );
+
+      if (!feeResult.success) {
+        setIsSubmitting(false);
+        toast({
+          title: 'Payment Failed',
+          description: feeResult.error || 'Could not process tournament fee',
+          variant: 'destructive'
+        });
+        return;
+      }
+    }
+
+    // Register for tournament
     const result = await registerForTournament({
       tournamentId: tournament.id,
       playerId: user?.id || '',
@@ -119,7 +154,9 @@ export default function Registration() {
     if (result.success) {
       toast({
         title: 'Registration Successful!',
-        description: `You have been registered for ${tournament.name}`,
+        description: tournament.entryFee > 0 
+          ? `₹${tournament.entryFee} deducted from your wallet. You are registered for ${tournament.name}`
+          : `You have been registered for ${tournament.name}`,
       });
       navigate(`/tournaments/${tournament.id}`);
     } else {
@@ -259,10 +296,23 @@ export default function Registration() {
 
             {/* Entry Fee Notice */}
             <div className="p-4 rounded-lg bg-muted/50 border border-border/50">
-              <p className="text-sm text-muted-foreground">
-                <strong className="text-foreground">Entry Fee:</strong>{' '}
-                {tournament.entryFee === 0 ? 'Free Entry' : `₹${tournament.entryFee}`}
-              </p>
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  <strong className="text-foreground">Entry Fee:</strong>{' '}
+                  {tournament.entryFee === 0 ? 'Free Entry' : `₹${tournament.entryFee}`}
+                </p>
+                {tournament.entryFee > 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    <strong className="text-foreground">Your Wallet Balance:</strong>{' '}
+                    ₹{wallet?.balance || 0}
+                  </p>
+                )}
+                {tournament.entryFee > 0 && wallet && wallet.balance < tournament.entryFee && (
+                  <p className="text-sm text-destructive font-medium">
+                    ⚠ Insufficient balance. Please add funds to your wallet.
+                  </p>
+                )}
+              </div>
             </div>
 
             {/* Submit Button */}
@@ -271,7 +321,7 @@ export default function Registration() {
               variant="neon"
               size="lg"
               className="w-full"
-              disabled={isSubmitting}
+              disabled={isSubmitting || (tournament.entryFee > 0 && (!wallet || wallet.balance < tournament.entryFee))}
             >
               {isSubmitting ? (
                 <>
@@ -281,10 +331,22 @@ export default function Registration() {
               ) : (
                 <>
                   <Trophy className="h-4 w-4 mr-2" />
-                  Complete Registration
+                  {tournament.entryFee > 0 ? `Pay ₹${tournament.entryFee} & Register` : 'Complete Registration'}
                 </>
               )}
             </Button>
+            
+            {tournament.entryFee > 0 && wallet && wallet.balance < tournament.entryFee && (
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                className="w-full"
+                onClick={() => navigate('/wallet')}
+              >
+                Add Funds to Wallet
+              </Button>
+            )}
           </form>
         </motion.div>
       </div>

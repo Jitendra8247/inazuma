@@ -24,7 +24,6 @@ const registerSchema = z.object({
     .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
     .regex(/[0-9]/, 'Password must contain at least one number'),
   confirmPassword: z.string(),
-  role: z.enum(['player', 'organizer']),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ['confirmPassword'],
@@ -44,13 +43,11 @@ export default function Register() {
     formState: { errors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
-    defaultValues: {
-      role: 'player',
-    },
   });
 
   const onSubmit = async (data: RegisterFormData) => {
-    const result = await registerUser(data.email, data.password, data.username, data.role);
+    // All registrations through UI are for players only
+    const result = await registerUser(data.email, data.password, data.username, 'player');
     
     if (result.success) {
       toast({
@@ -168,37 +165,6 @@ export default function Register() {
               {errors.confirmPassword && (
                 <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
               )}
-            </div>
-
-            {/* Role Selection */}
-            <div className="space-y-2">
-              <Label>Account Type</Label>
-              <div className="grid grid-cols-2 gap-3">
-                <label className="relative">
-                  <input
-                    type="radio"
-                    value="player"
-                    {...register('role')}
-                    className="peer sr-only"
-                  />
-                  <div className="p-3 rounded-lg border border-border/50 cursor-pointer text-center transition-all peer-checked:border-primary peer-checked:bg-primary/10">
-                    <p className="font-medium">Player</p>
-                    <p className="text-xs text-muted-foreground">Compete in tournaments</p>
-                  </div>
-                </label>
-                <label className="relative">
-                  <input
-                    type="radio"
-                    value="organizer"
-                    {...register('role')}
-                    className="peer sr-only"
-                  />
-                  <div className="p-3 rounded-lg border border-border/50 cursor-pointer text-center transition-all peer-checked:border-secondary peer-checked:bg-secondary/10">
-                    <p className="font-medium">Organizer</p>
-                    <p className="text-xs text-muted-foreground">Host tournaments</p>
-                  </div>
-                </label>
-              </div>
             </div>
 
             {/* Submit Button */}

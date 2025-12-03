@@ -4,8 +4,11 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Rocket, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/context/AuthContext';
 
 export default function CTA() {
+  const { isAuthenticated } = useAuth();
+
   return (
     <section className="py-20 relative overflow-hidden">
       {/* Background */}
@@ -45,12 +48,22 @@ export default function CTA() {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button variant="neon" size="xl" asChild>
-              <Link to="/register">
-                <Rocket className="h-5 w-5 mr-2" />
-                Start Your Journey
-              </Link>
-            </Button>
+            {!isAuthenticated && (
+              <Button variant="neon" size="xl" asChild>
+                <Link to="/register">
+                  <Rocket className="h-5 w-5 mr-2" />
+                  Start Your Journey
+                </Link>
+              </Button>
+            )}
+            {isAuthenticated && (
+              <Button variant="neon" size="xl" asChild>
+                <Link to="/dashboard">
+                  <Rocket className="h-5 w-5 mr-2" />
+                  Go to Dashboard
+                </Link>
+              </Button>
+            )}
             <Button variant="outline" size="xl" asChild>
               <Link to="/tournaments">
                 Explore Tournaments
