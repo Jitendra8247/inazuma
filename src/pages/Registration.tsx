@@ -41,7 +41,7 @@ export default function Registration() {
   const { toast } = useToast();
   const { getTournamentById, registerForTournament, isPlayerRegistered } = useTournaments();
   const { user, isAuthenticated } = useAuth();
-  const { wallet, deductTournamentFee } = useWallet();
+  const { wallet, refreshWallet } = useWallet();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const tournament = getTournamentById(id || '');
@@ -109,9 +109,8 @@ export default function Registration() {
   const onSubmit = async (data: RegistrationFormData) => {
     setIsSubmitting(true);
     
-    // Check if tournament has entry fee
+    // Check if tournament has entry fee and wallet balance
     if (tournament.entryFee > 0) {
-      // Check wallet balance
       if (!wallet || wallet.balance < tournament.entryFee) {
         setIsSubmitting(false);
         toast({
@@ -121,37 +120,25 @@ export default function Registration() {
         });
         return;
       }
-
-      // Deduct tournament fee
-      const feeResult = await deductTournamentFee(
-        tournament.id,
-        tournament.name,
-        tournament.entryFee,
-        tournament.organizerId
-      );
-
-      if (!feeResult.success) {
-        setIsSubmitting(false);
-        toast({
-          title: 'Payment Failed',
-          description: feeResult.error || 'Could not process tournament fee',
-          variant: 'destructive'
-        });
-        return;
-      }
     }
 
-    // Register for tournament
+    // Register for tournament (backend handles wallet deduction automatically)
     const result = await registerForTournament({
       tournamentId: tournament.id,
       playerId: user?.id || '',
       playerName: data.playerName,
-      teamName: data.teamName
+      teamName: data.teamName,
+      email: data.email,
+      phone: data.phone,
+      inGameId: data.inGameId
     });
 
     setIsSubmitting(false);
 
     if (result.success) {
+      // Refresh wallet to get updated balance
+      await refreshWallet();
+      
       toast({
         title: 'Registration Successful!',
         description: tournament.entryFee > 0 

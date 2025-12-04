@@ -25,17 +25,16 @@ export default function AdminWallets() {
 
   const wallets = getAllWallets();
 
-  // Get user info from AuthContext
+  // Get user info from wallet data (already populated from backend)
   const walletsWithUserInfo = useMemo(() => {
     return wallets.map(wallet => {
-      const userInfo = getUserById(wallet.userId);
       return {
         ...wallet,
-        username: userInfo?.username || `User_${wallet.userId.slice(0, 8)}`,
-        email: userInfo?.email || `user${wallet.userId.slice(0, 4)}@example.com`
+        username: wallet.userInfo?.username || `User_${wallet.userId.slice(0, 8)}`,
+        email: wallet.userInfo?.email || `user${wallet.userId.slice(0, 4)}@example.com`
       };
     });
-  }, [wallets, getUserById]);
+  }, [wallets]);
 
   const filteredWallets = useMemo(() => {
     if (!searchQuery) return walletsWithUserInfo;

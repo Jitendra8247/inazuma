@@ -12,71 +12,71 @@
 
 @layer base {
   :root {
-    /* Core backgrounds - Deep cyberpunk blacks with blue tint */
-    --background: 230 25% 5%;
-    --foreground: 200 100% 97%;
+    /* Futuristic Black & Grey Minimal Theme */
+    --background: 0 0% 3%;           /* Pure black #080808 */
+    --foreground: 0 0% 92%;          /* Light grey text #EBEBEB */
 
-    /* Card surfaces - Slightly elevated dark surfaces */
-    --card: 230 30% 8%;
-    --card-foreground: 200 100% 97%;
+    /* Card surfaces - Subtle grey elevation */
+    --card: 0 0% 7%;                 /* Dark grey #121212 */
+    --card-foreground: 0 0% 92%;
 
     /* Popovers/Dropdowns */
-    --popover: 230 30% 10%;
-    --popover-foreground: 200 100% 97%;
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 92%;
 
-    /* Primary - Electric Cyan Neon */
-    --primary: 185 100% 50%;
-    --primary-foreground: 230 25% 5%;
+    /* Primary - Light Grey Accent */
+    --primary: 0 0% 75%;             /* Light grey #BFBFBF */
+    --primary-foreground: 0 0% 8%;
 
-    /* Secondary - Hot Magenta Neon */
-    --secondary: 315 100% 55%;
-    --secondary-foreground: 200 100% 97%;
+    /* Secondary - Medium Grey */
+    --secondary: 0 0% 18%;           /* Medium grey #2E2E2E */
+    --secondary-foreground: 0 0% 92%;
 
-    /* Muted - Dimmed cyber surfaces */
-    --muted: 230 25% 15%;
-    --muted-foreground: 220 15% 55%;
+    /* Muted - Subtle grey */
+    --muted: 0 0% 12%;               /* Dark grey #1F1F1F */
+    --muted-foreground: 0 0% 55%;    /* Medium grey text */
 
-    /* Accent - Lime Neon */
-    --accent: 145 100% 50%;
-    --accent-foreground: 230 25% 5%;
+    /* Accent - Bright Grey */
+    --accent: 0 0% 88%;              /* Bright grey accent */
+    --accent-foreground: 0 0% 8%;
 
-    /* Destructive - Red Alert */
-    --destructive: 0 85% 55%;
-    --destructive-foreground: 200 100% 97%;
+    /* Destructive - Red for errors */
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 98%;
 
-    /* Borders and inputs */
-    --border: 230 25% 20%;
-    --input: 230 25% 15%;
-    --ring: 185 100% 50%;
+    /* Borders and inputs - Minimal */
+    --border: 0 0% 15%;              /* Subtle border #262626 */
+    --input: 0 0% 10%;
+    --ring: 0 0% 75%;
 
-    --radius: 0.5rem;
+    --radius: 0.125rem;              /* Sharp minimal corners */
 
-    /* Custom cyberpunk tokens */
-    --neon-cyan: 185 100% 50%;
-    --neon-magenta: 315 100% 55%;
-    --neon-lime: 145 100% 50%;
-    --neon-orange: 25 100% 55%;
-    --neon-purple: 270 100% 60%;
+    /* Minimal accent colors */
+    --neon-cyan: 0 0% 80%;           /* Soft grey-white */
+    --neon-magenta: 0 0% 75%;        /* Medium grey */
+    --neon-lime: 0 0% 85%;           /* Light grey */
+    --neon-orange: 0 0% 70%;         /* Darker grey */
+    --neon-purple: 0 0% 78%;         /* Medium-light grey */
     
-    /* Glow effects */
-    --glow-cyan: 0 0 20px hsl(185 100% 50% / 0.5), 0 0 40px hsl(185 100% 50% / 0.3);
-    --glow-magenta: 0 0 20px hsl(315 100% 55% / 0.5), 0 0 40px hsl(315 100% 55% / 0.3);
-    --glow-lime: 0 0 20px hsl(145 100% 50% / 0.5), 0 0 40px hsl(145 100% 50% / 0.3);
+    /* Subtle glow effects */
+    --glow-cyan: 0 0 8px rgba(255, 255, 255, 0.1), 0 0 16px rgba(255, 255, 255, 0.05);
+    --glow-magenta: 0 0 8px rgba(200, 200, 200, 0.1), 0 0 16px rgba(200, 200, 200, 0.05);
+    --glow-lime: 0 0 8px rgba(220, 220, 220, 0.1), 0 0 16px rgba(220, 220, 220, 0.05);
 
-    /* Gradients */
-    --gradient-cyber: linear-gradient(135deg, hsl(185 100% 50% / 0.2), hsl(315 100% 55% / 0.2));
-    --gradient-hero: linear-gradient(180deg, hsl(230 25% 5%) 0%, hsl(230 30% 10%) 100%);
-    --gradient-card: linear-gradient(145deg, hsl(230 30% 12%) 0%, hsl(230 30% 6%) 100%);
+    /* Minimal gradients */
+    --gradient-cyber: linear-gradient(135deg, hsl(0 0% 10%) 0%, hsl(0 0% 5%) 100%);
+    --gradient-hero: linear-gradient(180deg, transparent 0%, hsl(0 0% 3%) 100%);
+    --gradient-card: linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.005) 100%);
 
-    /* Sidebar - Match dark theme */
-    --sidebar-background: 230 30% 6%;
-    --sidebar-foreground: 200 100% 97%;
-    --sidebar-primary: 185 100% 50%;
-    --sidebar-primary-foreground: 230 25% 5%;
-    --sidebar-accent: 230 25% 15%;
-    --sidebar-accent-foreground: 200 100% 97%;
-    --sidebar-border: 230 25% 20%;
-    --sidebar-ring: 185 100% 50%;
+    /* Sidebar - Match minimal theme */
+    --sidebar-background: 0 0% 5%;
+    --sidebar-foreground: 0 0% 92%;
+    --sidebar-primary: 0 0% 75%;
+    --sidebar-primary-foreground: 0 0% 8%;
+    --sidebar-accent: 0 0% 12%;
+    --sidebar-accent-foreground: 0 0% 92%;
+    --sidebar-border: 0 0% 15%;
+    --sidebar-ring: 0 0% 75%;
   }
 }
 
@@ -92,6 +92,20 @@
   body {
     @apply bg-background text-foreground;
     font-family: 'Inter', sans-serif;
+    background-image: url('/images/bgmi-helmet.jpg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+  }
+  
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(to bottom, rgba(8, 8, 8, 0.5) 0%, rgba(8, 8, 8, 0.7) 100%);
+    pointer-events: none;
+    z-index: -1;
   }
 
   h1, h2, h3, h4, h5, h6 {

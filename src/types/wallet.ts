@@ -18,6 +18,11 @@ export interface Wallet {
   userId: string;
   balance: number;
   transactions: Transaction[];
+  userInfo?: {
+    username: string;
+    email: string;
+    role: string;
+  };
 }
 
 export interface BankDetails {

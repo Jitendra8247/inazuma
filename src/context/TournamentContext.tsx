@@ -1,11 +1,14 @@
 // TournamentContext - Manages tournaments and registrations state
 
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import { Tournament, Registration, mockTournaments, mockRegistrations } from '@/data/mockData';
+import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
+import { Tournament, Registration } from '@/data/mockData';
+import { tournamentsAPI, registrationsAPI } from '@/services/api';
+import { useAuth } from './AuthContext';
 
 interface TournamentContextType {
   tournaments: Tournament[];
   registrations: Registration[];
+  isLoading: boolean;
   getTournamentById: (id: string) => Tournament | undefined;
   getRegistrationsByTournament: (tournamentId: string) => Registration[];
   getRegistrationsByPlayer: (playerId: string) => Registration[];
@@ -14,13 +17,88 @@ interface TournamentContextType {
   updateTournament: (id: string, updates: Partial<Tournament>) => void;
   deleteTournament: (id: string) => void;
   isPlayerRegistered: (tournamentId: string, playerId: string) => boolean;
+  refreshTournaments: () => Promise<void>;
+  refreshRegistrations: () => Promise<void>;
 }
 
 const TournamentContext = createContext<TournamentContextType | undefined>(undefined);
 
 export function TournamentProvider({ children }: { children: ReactNode }) {
-  const [tournaments, setTournaments] = useState<Tournament[]>(mockTournaments);
-  const [registrations, setRegistrations] = useState<Registration[]>(mockRegistrations);
+  const { user } = useAuth();
+  const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [registrations, setRegistrations] = useState<Registration[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Fetch all tournaments from API
+  const refreshTournaments = useCallback(async () => {
+    try {
+      const response = await tournamentsAPI.getAllTournaments();
+      if (response.success && response.tournaments) {
+        const formattedTournaments = response.tournaments.map((t: any) => ({
+          id: t._id || t.id,
+          name: t.name,
+          game: t.game,
+          mode: t.mode,
+          prizePool: t.prizePool,
+          entryFee: t.entryFee,
+          maxTeams: t.maxTeams,
+          registeredTeams: t.registeredTeams,
+          startDate: t.startDate,
+          endDate: t.endDate,
+          status: t.status,
+          description: t.description,
+          rules: t.rules,
+          organizer: t.organizer,
+          organizerId: t.organizerId,
+          region: t.region,
+          platform: t.platform,
+          image: t.image
+        }));
+        setTournaments(formattedTournaments);
+      }
+    } catch (error) {
+      console.error('Error fetching tournaments:', error);
+    }
+  }, []);
+
+  // Fetch user's registrations from API
+  const refreshRegistrations = useCallback(async () => {
+    if (!user) {
+      setRegistrations([]);
+      return;
+    }
+    
+    try {
+      const response = await registrationsAPI.getMyRegistrations();
+      if (response.success && response.registrations) {
+        const formattedRegistrations = response.registrations.map((r: any) => ({
+          id: r._id || r.id,
+          tournamentId: r.tournamentId?._id || r.tournamentId,
+          playerId: r.playerId,
+          playerName: r.playerName,
+          teamName: r.teamName,
+          email: r.email,
+          phone: r.phone,
+          inGameId: r.inGameId,
+          status: r.status,
+          registeredAt: r.registeredAt
+        }));
+        setRegistrations(formattedRegistrations);
+      }
+    } catch (error) {
+      console.error('Error fetching registrations:', error);
+    }
+  }, [user]);
+
+  // Load tournaments on mount
+  useEffect(() => {
+    refreshTournaments();
+  }, [refreshTournaments]);
+
+  // Load registrations when user changes
+  useEffect(() => {
+    refreshRegistrations();
+  }, [refreshRegistrations]);
 
   // Get a single tournament by ID
   const getTournamentById = useCallback((id: string) => {
@@ -42,83 +120,88 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     return registrations.some(r => r.tournamentId === tournamentId && r.playerId === playerId);
   }, [registrations]);
 
-  // Register a player/team for a tournament
+  // Register a player/team for a tournament - uses API (backend handles wallet deduction)
   const registerForTournament = useCallback(async (
     registration: Omit<Registration, 'id' | 'registeredAt' | 'status'>
   ): Promise<{ success: boolean; error?: string }> => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
+    setIsLoading(true);
 
-    const tournament = tournaments.find(t => t.id === registration.tournamentId);
-    
-    if (!tournament) {
-      return { success: false, error: 'Tournament not found' };
+    try {
+      const response = await registrationsAPI.registerForTournament({
+        tournamentId: registration.tournamentId,
+        teamName: registration.teamName,
+        email: registration.email,
+        phone: registration.phone,
+        inGameId: registration.inGameId
+      });
+
+      if (response.success) {
+        // Refresh both tournaments and registrations to get updated data
+        await Promise.all([refreshTournaments(), refreshRegistrations()]);
+        setIsLoading(false);
+        return { success: true };
+      }
+
+      setIsLoading(false);
+      return { success: false, error: response.message || 'Registration failed' };
+    } catch (error: any) {
+      setIsLoading(false);
+      return {
+        success: false,
+        error: error.response?.data?.message || 'Registration failed'
+      };
     }
+  }, [refreshTournaments, refreshRegistrations]);
 
-    if (tournament.registeredTeams >= tournament.maxTeams) {
-      return { success: false, error: 'Tournament is full' };
-    }
-
-    if (tournament.status === 'completed') {
-      return { success: false, error: 'Tournament has already ended' };
-    }
-
-    if (isPlayerRegistered(registration.tournamentId, registration.playerId)) {
-      return { success: false, error: 'You are already registered for this tournament' };
-    }
-
-    const newRegistration: Registration = {
-      ...registration,
-      id: `r${Date.now()}`,
-      registeredAt: new Date().toISOString().split('T')[0],
-      status: 'confirmed'
-    };
-
-    setRegistrations(prev => [...prev, newRegistration]);
-    
-    // Update tournament registered teams count
-    setTournaments(prev => prev.map(t => 
-      t.id === registration.tournamentId 
-        ? { ...t, registeredTeams: t.registeredTeams + 1 }
-        : t
-    ));
-
-    return { success: true };
-  }, [tournaments, isPlayerRegistered]);
-
-  // Create a new tournament (for organizers)
+  // Create a new tournament (for organizers) - uses API
   const createTournament = useCallback(async (
     tournamentData: Omit<Tournament, 'id' | 'registeredTeams'>
   ): Promise<{ success: boolean; tournament?: Tournament }> => {
-    await new Promise(resolve => setTimeout(resolve, 500));
+    setIsLoading(true);
 
-    const newTournament: Tournament = {
-      ...tournamentData,
-      id: `t${Date.now()}`,
-      registeredTeams: 0
-    };
+    try {
+      const response = await tournamentsAPI.createTournament(tournamentData);
 
-    setTournaments(prev => [...prev, newTournament]);
-    return { success: true, tournament: newTournament };
-  }, []);
+      if (response.success && response.tournament) {
+        await refreshTournaments();
+        setIsLoading(false);
+        return { success: true, tournament: response.tournament };
+      }
 
-  // Update an existing tournament
-  const updateTournament = useCallback((id: string, updates: Partial<Tournament>) => {
-    setTournaments(prev => prev.map(t => 
-      t.id === id ? { ...t, ...updates } : t
-    ));
-  }, []);
+      setIsLoading(false);
+      return { success: false };
+    } catch (error: any) {
+      setIsLoading(false);
+      console.error('Error creating tournament:', error);
+      return { success: false };
+    }
+  }, [refreshTournaments]);
 
-  // Delete a tournament
-  const deleteTournament = useCallback((id: string) => {
-    setTournaments(prev => prev.filter(t => t.id !== id));
-    setRegistrations(prev => prev.filter(r => r.tournamentId !== id));
-  }, []);
+  // Update an existing tournament - uses API
+  const updateTournament = useCallback(async (id: string, updates: Partial<Tournament>) => {
+    try {
+      await tournamentsAPI.updateTournament(id, updates);
+      await refreshTournaments();
+    } catch (error) {
+      console.error('Error updating tournament:', error);
+    }
+  }, [refreshTournaments]);
+
+  // Delete a tournament - uses API
+  const deleteTournament = useCallback(async (id: string) => {
+    try {
+      await tournamentsAPI.deleteTournament(id);
+      await refreshTournaments();
+    } catch (error) {
+      console.error('Error deleting tournament:', error);
+    }
+  }, [refreshTournaments]);
 
   return (
     <TournamentContext.Provider value={{
       tournaments,
       registrations,
+      isLoading,
       getTournamentById,
       getRegistrationsByTournament,
       getRegistrationsByPlayer,
@@ -126,7 +209,9 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
       createTournament,
       updateTournament,
       deleteTournament,
-      isPlayerRegistered
+      isPlayerRegistered,
+      refreshTournaments,
+      refreshRegistrations
     }}>
       {children}
     </TournamentContext.Provider>

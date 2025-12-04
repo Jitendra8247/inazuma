@@ -24,12 +24,13 @@ export default function AdminWalletDialog({
   username,
   actionType
 }: AdminWalletDialogProps) {
-  const { adminAddFunds, adminDeductFunds, getUserWallet, isLoading } = useWallet();
+  const { adminAddFunds, adminDeductFunds, getUserWallet, wallet, isLoading } = useWallet();
   const { toast } = useToast();
   const [amount, setAmount] = useState('');
   const [reason, setReason] = useState('');
 
   const userWallet = getUserWallet(userId);
+  const adminBalance = wallet?.balance || 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,6 +54,26 @@ export default function AdminWalletDialog({
       return;
     }
 
+    // Check admin balance when adding funds
+    if (actionType === 'add' && adminBalance < amountNum) {
+      toast({
+        title: 'Insufficient Balance',
+        description: `You need ₹${amountNum.toLocaleString('en-IN')} but only have ₹${adminBalance.toLocaleString('en-IN')} in your wallet`,
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // Check player balance when deducting funds
+    if (actionType === 'deduct' && (userWallet?.balance || 0) < amountNum) {
+      toast({
+        title: 'Insufficient Balance',
+        description: `Player only has ₹${(userWallet?.balance || 0).toLocaleString('en-IN')} in their wallet`,
+        variant: 'destructive'
+      });
+      return;
+    }
+
     const result = actionType === 'add'
       ? await adminAddFunds(userId, amountNum, reason)
       : await adminDeductFunds(userId, amountNum, reason);
@@ -60,7 +81,9 @@ export default function AdminWalletDialog({
     if (result.success) {
       toast({
         title: `Funds ${actionType === 'add' ? 'Added' : 'Deducted'}`,
-        description: `₹${amountNum.toLocaleString('en-IN')} ${actionType === 'add' ? 'added to' : 'deducted from'} ${username}'s wallet`
+        description: actionType === 'add' 
+          ? `₹${amountNum.toLocaleString('en-IN')} transferred from your wallet to ${username}'s wallet`
+          : `₹${amountNum.toLocaleString('en-IN')} transferred from ${username}'s wallet to your wallet`
       });
       setAmount('');
       setReason('');
@@ -83,11 +106,37 @@ export default function AdminWalletDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="mb-4 p-3 rounded-lg bg-muted">
-          <p className="text-sm text-muted-foreground">Current Balance</p>
-          <p className="font-display text-xl font-bold text-primary">
-            ₹{userWallet?.balance.toLocaleString('en-IN') || 0}
-          </p>
+        <div className="space-y-3 mb-4">
+          <div className="p-3 rounded-lg bg-muted">
+            <p className="text-sm text-muted-foreground">Player's Current Balance</p>
+            <p className="font-display text-xl font-bold text-primary">
+              ₹{userWallet?.balance.toLocaleString('en-IN') || 0}
+            </p>
+          </div>
+
+          {actionType === 'add' && (
+            <div className="p-3 rounded-lg bg-secondary/10 border border-secondary/30">
+              <p className="text-sm text-muted-foreground">Your Wallet Balance</p>
+              <p className="font-display text-lg font-bold text-secondary">
+                ₹{adminBalance.toLocaleString('en-IN')}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Amount will be deducted from your wallet
+              </p>
+            </div>
+          )}
+
+          {actionType === 'deduct' && (
+            <div className="p-3 rounded-lg bg-accent/10 border border-accent/30">
+              <p className="text-sm text-muted-foreground">Your Wallet Balance</p>
+              <p className="font-display text-lg font-bold text-accent">
+                ₹{adminBalance.toLocaleString('en-IN')}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Amount will be added to your wallet
+              </p>
+            </div>
+          )}
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

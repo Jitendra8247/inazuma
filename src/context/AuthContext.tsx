@@ -1,7 +1,8 @@
 // AuthContext - Manages user authentication state and actions
 
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
 import { User } from '@/data/mockData';
+import { authAPI, usersAPI } from '@/services/api';
 
 interface AuthContextType {
   user: User | null;
@@ -75,46 +76,67 @@ const ORGANIZER_CREDENTIALS = new Map([
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Start as true while checking auth
+  const [allUsers, setAllUsers] = useState<User[]>([]);
 
-  // Login function - validates against mock database and hardcoded organizers
+  // Check if user is logged in on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const response = await authAPI.getCurrentUser();
+          if (response.success && response.user) {
+            setUser({
+              id: response.user.id,
+              email: response.user.email,
+              username: response.user.username,
+              avatar: response.user.avatar,
+              role: response.user.role,
+              stats: response.user.stats
+            });
+          }
+        } catch (error) {
+          localStorage.removeItem('token');
+        }
+      }
+      setIsLoading(false); // Done checking auth
+    };
+    checkAuth();
+  }, []);
+
+  // Login function - uses real API
   const login = useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     setIsLoading(true);
     
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    // Check hardcoded organizer credentials first
-    const organizerData = ORGANIZER_CREDENTIALS.get(email.toLowerCase());
-    if (organizerData) {
-      if (organizerData.password !== password) {
+    try {
+      const response = await authAPI.login(email, password);
+      
+      if (response.success && response.user) {
+        setUser({
+          id: response.user.id,
+          email: response.user.email,
+          username: response.user.username,
+          avatar: response.user.avatar,
+          role: response.user.role,
+          stats: response.user.stats
+        });
         setIsLoading(false);
-        return { success: false, error: 'Incorrect password' };
+        return { success: true };
       }
-      setUser(organizerData.user);
+      
       setIsLoading(false);
-      return { success: true };
-    }
-    
-    // Check regular user database
-    const userData = mockUsers.get(email.toLowerCase());
-    
-    if (!userData) {
+      return { success: false, error: 'Login failed' };
+    } catch (error: any) {
       setIsLoading(false);
-      return { success: false, error: 'User not found' };
+      return { 
+        success: false, 
+        error: error.response?.data?.message || 'Invalid credentials'
+      };
     }
-    
-    if (userData.password !== password) {
-      setIsLoading(false);
-      return { success: false, error: 'Incorrect password' };
-    }
-    
-    setUser(userData.user);
-    setIsLoading(false);
-    return { success: true };
   }, []);
 
-  // Register function - adds new user to mock database (players only)
+  // Register function - uses real API (players only)
   const register = useCallback(async (
     email: string, 
     password: string, 
@@ -123,43 +145,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   ): Promise<{ success: boolean; error?: string }> => {
     setIsLoading(true);
     
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
     // Prevent organizer registration through this function
     if (role === 'organizer') {
       setIsLoading(false);
       return { success: false, error: 'Organizer registration is not available' };
     }
     
-    // Check if email is already registered (including hardcoded organizers)
-    if (mockUsers.has(email.toLowerCase()) || ORGANIZER_CREDENTIALS.has(email.toLowerCase())) {
-      setIsLoading(false);
-      return { success: false, error: 'Email already registered' };
-    }
-    
-    const newUser: User = {
-      id: `u${Date.now()}`,
-      email: email.toLowerCase(),
-      username,
-      avatar: '/placeholder.svg',
-      role: 'player',
-      stats: {
-        tournamentsPlayed: 0,
-        tournamentsWon: 0,
-        totalEarnings: 0,
-        rank: 'Bronze'
+    try {
+      const response = await authAPI.register({
+        username,
+        email,
+        password,
+        role: 'player'
+      });
+      
+      if (response.success && response.user) {
+        setUser({
+          id: response.user.id,
+          email: response.user.email,
+          username: response.user.username,
+          avatar: response.user.avatar,
+          role: response.user.role,
+          stats: response.user.stats
+        });
+        setIsLoading(false);
+        return { success: true };
       }
-    };
-    
-    mockUsers.set(email.toLowerCase(), { user: newUser, password });
-    setUser(newUser);
-    setIsLoading(false);
-    return { success: true };
+      
+      setIsLoading(false);
+      return { success: false, error: 'Registration failed' };
+    } catch (error: any) {
+      setIsLoading(false);
+      console.error('Registration error:', error);
+      const errorMessage = error.response?.data?.message 
+        || error.response?.data?.errors?.[0]?.msg
+        || error.message 
+        || 'Registration failed. Please try again.';
+      return { 
+        success: false, 
+        error: errorMessage
+      };
+    }
   }, []);
 
   // Logout function
   const logout = useCallback(() => {
+    authAPI.logout();
     setUser(null);
   }, []);
 
@@ -168,36 +199,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(prev => prev ? { ...prev, ...updates } : null);
   }, []);
 
-  // Get user by ID
+  // Get user by ID (synchronous - uses cached data)
   const getUserById = useCallback((userId: string): User | null => {
-    // Check regular users
-    for (const [, userData] of mockUsers) {
-      if (userData.user.id === userId) {
-        return userData.user;
-      }
-    }
-    // Check organizers
-    for (const [, userData] of ORGANIZER_CREDENTIALS) {
-      if (userData.user.id === userId) {
-        return userData.user;
-      }
-    }
-    return null;
-  }, []);
+    // Return from cache
+    const cachedUser = allUsers.find(u => u.id === userId);
+    return cachedUser || null;
+  }, [allUsers]);
 
-  // Get all users
+  // Get all users (for organizers)
   const getAllUsers = useCallback((): User[] => {
-    const users: User[] = [];
-    // Add regular users
-    for (const [, userData] of mockUsers) {
-      users.push(userData.user);
-    }
-    // Add organizers
-    for (const [, userData] of ORGANIZER_CREDENTIALS) {
-      users.push(userData.user);
-    }
-    return users;
-  }, []);
+    // Return cached users
+    return allUsers;
+  }, [allUsers]);
+
+  // Fetch all users if organizer
+  useEffect(() => {
+    const fetchAllUsers = async () => {
+      if (user?.role === 'organizer') {
+        try {
+          const response = await usersAPI.getAllUsers();
+          if (response.success && response.users) {
+            setAllUsers(response.users.map((u: any) => ({
+              id: u.id || u._id,
+              email: u.email,
+              username: u.username,
+              avatar: u.avatar,
+              role: u.role,
+              stats: u.stats
+            })));
+          }
+        } catch (error) {
+          console.error('Error fetching users:', error);
+        }
+      }
+    };
+    fetchAllUsers();
+  }, [user]);
 
   return (
     <AuthContext.Provider value={{
