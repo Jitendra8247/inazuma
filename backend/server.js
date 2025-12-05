@@ -36,6 +36,7 @@ app.use('/api/tournaments', require('./routes/tournaments'));
 app.use('/api/registrations', require('./routes/registrations'));
 app.use('/api/wallets', require('./routes/wallets'));
 app.use('/api/transactions', require('./routes/transactions'));
+app.use('/api/password-reset', require('./routes/passwordReset'));
 
 // Health check
 app.get('/api/health', (req, res) => {

@@ -20,6 +20,7 @@ import TournamentDetails from "./pages/TournamentDetails";
 import Registration from "./pages/Registration";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import Wallet from "./pages/Wallet";
@@ -50,6 +51,7 @@ const App = () => (
                     <Route path="/tournaments/:id" element={<TournamentDetails />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
                     
                     {/* Protected Routes */}
                     <Route path="/register/:id" element={

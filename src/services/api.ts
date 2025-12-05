@@ -204,4 +204,22 @@ export const transactionsAPI = {
   },
 };
 
+// Password Reset API
+export const passwordResetAPI = {
+  verifyUser: async (email: string, username: string) => {
+    const response = await api.post('/password-reset/verify-user', { email, username });
+    return response.data;
+  },
+
+  verifyToken: async (token: string) => {
+    const response = await api.post('/password-reset/verify', { token });
+    return response.data;
+  },
+
+  resetPassword: async (token: string, password: string) => {
+    const response = await api.post('/password-reset/reset', { token, password });
+    return response.data;
+  },
+};
+
 export default api;
