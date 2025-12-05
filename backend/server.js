@@ -67,7 +67,13 @@ app.use((req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
+// Start tournament scheduler
+const { startTournamentScheduler } = require('./utils/tournamentScheduler');
+
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  
+  // Start the tournament auto-archiver
+  startTournamentScheduler();
 });

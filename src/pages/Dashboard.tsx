@@ -59,12 +59,14 @@ export default function Dashboard() {
       entryFee: parseInt(formData.get('entryFee') as string) || 0,
       maxTeams: parseInt(formData.get('maxTeams') as string),
       startDate: formData.get('startDate') as string,
-      endDate: formData.get('endDate') as string,
+      startTime: formData.get('startTime') as string,
+      endDate: formData.get('endDate') as string || null,
       status: 'upcoming',
       image: '/placeholder.svg',
       description: formData.get('description') as string,
       rules: ['Standard tournament rules apply'],
       organizer: user?.username || 'Unknown',
+      organizerId: user?._id,
       region: 'India',
       platform: 'Mobile'
     });
@@ -80,12 +82,20 @@ export default function Dashboard() {
     }
   };
 
-  const handleDeleteTournament = (id: string, name: string) => {
-    deleteTournament(id);
-    toast({
-      title: 'Tournament Deleted',
-      description: `${name} has been deleted.`,
-    });
+  const handleDeleteTournament = async (id: string, name: string) => {
+    try {
+      await deleteTournament(id);
+      toast({
+        title: 'Tournament Deleted',
+        description: `${name} has been deleted.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Delete Failed',
+        description: error.response?.data?.message || 'Failed to delete tournament',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
@@ -157,9 +167,14 @@ export default function Dashboard() {
                     <Input id="startDate" name="startDate" type="date" required />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="endDate">End Date</Label>
-                    <Input id="endDate" name="endDate" type="date" required />
+                    <Label htmlFor="startTime">Start Time</Label>
+                    <Input id="startTime" name="startTime" type="time" required />
                   </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="endDate">End Date (Optional)</Label>
+                  <Input id="endDate" name="endDate" type="date" />
+                  <p className="text-xs text-muted-foreground">Leave empty if tournament is live/ongoing</p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="description">Description</Label>

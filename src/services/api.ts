@@ -103,6 +103,11 @@ export const tournamentsAPI = {
     return response.data;
   },
 
+  getMyTournaments: async () => {
+    const response = await api.get('/tournaments/my-tournaments');
+    return response.data;
+  },
+
   getTournamentById: async (id: string) => {
     const response = await api.get(`/tournaments/${id}`);
     return response.data;
@@ -115,6 +120,11 @@ export const tournamentsAPI = {
 
   updateTournament: async (id: string, data: any) => {
     const response = await api.put(`/tournaments/${id}`, data);
+    return response.data;
+  },
+
+  updateRoomCredentials: async (id: string, roomId: string, roomPassword: string) => {
+    const response = await api.put(`/tournaments/${id}/room-credentials`, { roomId, roomPassword });
     return response.data;
   },
 

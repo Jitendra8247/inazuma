@@ -10,6 +10,7 @@ export interface Tournament {
   maxTeams: number;
   registeredTeams: number;
   startDate: string;
+  startTime?: string;
   endDate: string;
   status: 'upcoming' | 'ongoing' | 'completed';
   image: string;
@@ -19,6 +20,10 @@ export interface Tournament {
   organizerId: string;
   region: string;
   platform: string;
+  roomId?: string;
+  roomPassword?: string;
+  roomCredentialsAvailable?: boolean;
+  archivedAt?: string;
 }
 
 export interface Player {

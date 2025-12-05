@@ -11,7 +11,7 @@ import { format } from 'date-fns';
 
 export default function MyTournaments() {
   const { user } = useAuth();
-  const { getRegistrationsByPlayer, getTournamentById } = useTournaments();
+  const { myTournaments, getRegistrationsByPlayer } = useTournaments();
 
   if (!user) {
     return (
@@ -21,28 +21,24 @@ export default function MyTournaments() {
     );
   }
 
-  let registrations;
-  let myTournaments;
+  const registrations = getRegistrationsByPlayer(user.id);
   
-  try {
-    registrations = getRegistrationsByPlayer(user.id);
-    myTournaments = registrations
-      .map(reg => ({
-        registration: reg,
-        tournament: getTournamentById(reg.tournamentId)
-      }))
-      .filter(item => item.tournament !== null && item.tournament !== undefined);
-  } catch (error) {
-    console.error('Error loading tournaments:', error);
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-destructive mb-2">Error loading tournaments</p>
-          <p className="text-sm text-muted-foreground">Please try refreshing the page</p>
-        </div>
-      </div>
-    );
-  }
+  // Map tournaments with their registration data
+  const tournamentsWithRegistration = myTournaments.map(tournament => {
+    const registration = registrations.find(reg => reg.tournamentId === tournament.id);
+    return {
+      tournament,
+      registration: registration || {
+        id: '',
+        tournamentId: tournament.id,
+        playerId: user.id,
+        playerName: user.username,
+        teamName: 'Unknown',
+        registeredAt: new Date().toISOString(),
+        status: 'confirmed' as const
+      }
+    };
+  });
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
@@ -86,7 +82,7 @@ export default function MyTournaments() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Registered</p>
-                <p className="font-display text-2xl font-bold">{myTournaments.length}</p>
+                <p className="font-display text-2xl font-bold">{tournamentsWithRegistration.length}</p>
               </div>
             </div>
           </Card>
@@ -99,7 +95,7 @@ export default function MyTournaments() {
               <div>
                 <p className="text-sm text-muted-foreground">Upcoming</p>
                 <p className="font-display text-2xl font-bold">
-                  {myTournaments.filter(t => t.tournament?.status === 'upcoming').length}
+                  {tournamentsWithRegistration.filter(t => t.tournament?.status === 'upcoming').length}
                 </p>
               </div>
             </div>
@@ -113,7 +109,7 @@ export default function MyTournaments() {
               <div>
                 <p className="text-sm text-muted-foreground">Completed</p>
                 <p className="font-display text-2xl font-bold">
-                  {myTournaments.filter(t => t.tournament?.status === 'completed').length}
+                  {tournamentsWithRegistration.filter(t => t.tournament?.status === 'completed').length}
                 </p>
               </div>
             </div>
@@ -121,7 +117,7 @@ export default function MyTournaments() {
         </motion.div>
 
         {/* Tournaments List */}
-        {myTournaments.length === 0 ? (
+        {tournamentsWithRegistration.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -140,7 +136,7 @@ export default function MyTournaments() {
           </motion.div>
         ) : (
           <div className="space-y-4">
-            {myTournaments.map((item, index) => {
+            {tournamentsWithRegistration.map((item, index) => {
               const { tournament, registration } = item;
               if (!tournament) return null;
 
@@ -151,7 +147,18 @@ export default function MyTournaments() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
                 >
-                  <Card className="p-6 hover:border-primary/50 transition-colors">
+                  <Card className="p-6 hover:border-primary/50 transition-colors relative">
+                    {/* Yellow blinking indicator for past tournaments */}
+                    {tournament.status === 'completed' && (
+                      <div className="absolute top-4 right-4 flex items-center gap-2">
+                        <div className="relative">
+                          <div className="w-3 h-3 bg-yellow-500 rounded-full animate-pulse"></div>
+                          <div className="absolute inset-0 w-3 h-3 bg-yellow-500 rounded-full animate-ping"></div>
+                        </div>
+                        <span className="text-xs font-medium text-yellow-500">Previous Tournament</span>
+                      </div>
+                    )}
+                    
                     <div className="flex flex-col md:flex-row gap-6">
                       {/* Tournament Image */}
                       <div className="w-full md:w-48 h-32 rounded-lg overflow-hidden bg-muted shrink-0">

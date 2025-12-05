@@ -7,6 +7,7 @@ import { useAuth } from './AuthContext';
 
 interface TournamentContextType {
   tournaments: Tournament[];
+  myTournaments: Tournament[];
   registrations: Registration[];
   isLoading: boolean;
   getTournamentById: (id: string) => Tournament | undefined;
@@ -18,6 +19,7 @@ interface TournamentContextType {
   deleteTournament: (id: string) => void;
   isPlayerRegistered: (tournamentId: string, playerId: string) => boolean;
   refreshTournaments: () => Promise<void>;
+  refreshMyTournaments: () => Promise<void>;
   refreshRegistrations: () => Promise<void>;
 }
 
@@ -26,6 +28,7 @@ const TournamentContext = createContext<TournamentContextType | undefined>(undef
 export function TournamentProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [myTournaments, setMyTournaments] = useState<Tournament[]>([]);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -44,6 +47,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
           maxTeams: t.maxTeams,
           registeredTeams: t.registeredTeams,
           startDate: t.startDate,
+          startTime: t.startTime,
           endDate: t.endDate,
           status: t.status,
           description: t.description,
@@ -52,7 +56,11 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
           organizerId: t.organizerId,
           region: t.region,
           platform: t.platform,
-          image: t.image
+          image: t.image,
+          roomId: t.roomId,
+          roomPassword: t.roomPassword,
+          roomCredentialsAvailable: t.roomCredentialsAvailable,
+          archivedAt: t.archivedAt
         }));
         setTournaments(formattedTournaments);
       }
@@ -90,10 +98,57 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     }
   }, [user]);
 
+  // Fetch user's tournaments (including archived ones)
+  const refreshMyTournaments = useCallback(async () => {
+    if (!user) {
+      setMyTournaments([]);
+      return;
+    }
+    
+    try {
+      const response = await tournamentsAPI.getMyTournaments();
+      if (response.success && response.tournaments) {
+        const formattedTournaments = response.tournaments.map((t: any) => ({
+          id: t._id || t.id,
+          name: t.name,
+          game: t.game,
+          mode: t.mode,
+          prizePool: t.prizePool,
+          entryFee: t.entryFee,
+          maxTeams: t.maxTeams,
+          registeredTeams: t.registeredTeams,
+          startDate: t.startDate,
+          startTime: t.startTime,
+          endDate: t.endDate,
+          status: t.status,
+          description: t.description,
+          rules: t.rules,
+          organizer: t.organizer,
+          organizerId: t.organizerId,
+          region: t.region,
+          platform: t.platform,
+          image: t.image,
+          roomId: t.roomId,
+          roomPassword: t.roomPassword,
+          roomCredentialsAvailable: t.roomCredentialsAvailable,
+          archivedAt: t.archivedAt
+        }));
+        setMyTournaments(formattedTournaments);
+      }
+    } catch (error) {
+      console.error('Error fetching my tournaments:', error);
+    }
+  }, [user]);
+
   // Load tournaments on mount
   useEffect(() => {
     refreshTournaments();
   }, [refreshTournaments]);
+
+  // Load user's tournaments when user changes
+  useEffect(() => {
+    refreshMyTournaments();
+  }, [refreshMyTournaments]);
 
   // Load registrations when user changes
   useEffect(() => {
@@ -190,16 +245,21 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   // Delete a tournament - uses API
   const deleteTournament = useCallback(async (id: string) => {
     try {
-      await tournamentsAPI.deleteTournament(id);
-      await refreshTournaments();
+      const response = await tournamentsAPI.deleteTournament(id);
+      if (response.success) {
+        await refreshTournaments();
+      }
+      return response;
     } catch (error) {
       console.error('Error deleting tournament:', error);
+      throw error;
     }
   }, [refreshTournaments]);
 
   return (
     <TournamentContext.Provider value={{
       tournaments,
+      myTournaments,
       registrations,
       isLoading,
       getTournamentById,
@@ -211,6 +271,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
       deleteTournament,
       isPlayerRegistered,
       refreshTournaments,
+      refreshMyTournaments,
       refreshRegistrations
     }}>
       {children}

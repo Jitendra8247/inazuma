@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import PlayerCard from '@/components/tournaments/PlayerCard';
 import BracketView from '@/components/tournaments/BracketView';
 import NotificationBanner from '@/components/common/NotificationBanner';
+import RoomCredentialsCard from '@/components/tournaments/RoomCredentialsCard';
 import { useTournaments } from '@/context/TournamentContext';
 import { useAuth } from '@/context/AuthContext';
 import { mockPlayers, mockBracket } from '@/data/mockData';
@@ -148,12 +149,17 @@ export default function TournamentDetails() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"
+          className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8"
         >
           <div className="p-4 rounded-lg bg-card border border-border/50">
             <Calendar className="h-5 w-5 text-primary mb-2" />
             <p className="text-xs text-muted-foreground">Start Date</p>
             <p className="font-semibold">{new Date(tournament.startDate).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+          </div>
+          <div className="p-4 rounded-lg bg-card border border-border/50">
+            <Clock className="h-5 w-5 text-primary mb-2" />
+            <p className="text-xs text-muted-foreground">Start Time</p>
+            <p className="font-semibold">{tournament.startTime || '00:00'}</p>
           </div>
           <div className="p-4 rounded-lg bg-card border border-border/50">
             <Users className="h-5 w-5 text-secondary mb-2" />
@@ -171,6 +177,22 @@ export default function TournamentDetails() {
             <p className="font-semibold">{tournament.entryFee === 0 ? 'Free' : `₹${tournament.entryFee}`}</p>
           </div>
         </motion.div>
+
+        {/* Room Credentials Card - Show only if registered or organizer */}
+        {(isRegistered || (user && tournament.organizerId === user.id)) && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className="mb-8"
+          >
+            <RoomCredentialsCard
+              tournament={tournament}
+              isOrganizer={user?.id === tournament.organizerId}
+              onUpdate={() => window.location.reload()}
+            />
+          </motion.div>
+        )}
 
         {/* Tabs Section */}
         <motion.div

@@ -41,14 +41,32 @@ const tournamentSchema = new mongoose.Schema({
     type: Date,
     required: [true, 'Start date is required']
   },
+  startTime: {
+    type: String,
+    required: [true, 'Start time is required'],
+    default: '00:00'
+  },
   endDate: {
     type: Date,
-    required: [true, 'End date is required']
+    required: false,
+    default: null
   },
   status: {
     type: String,
     enum: ['upcoming', 'ongoing', 'completed', 'cancelled'],
     default: 'upcoming'
+  },
+  roomId: {
+    type: String,
+    default: null
+  },
+  roomPassword: {
+    type: String,
+    default: null
+  },
+  roomCredentialsAvailable: {
+    type: Boolean,
+    default: false
   },
   image: {
     type: String,
@@ -81,6 +99,10 @@ const tournamentSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now
+  },
+  archivedAt: {
+    type: Date,
+    default: null
   }
 }, {
   timestamps: true
