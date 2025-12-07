@@ -93,6 +93,13 @@ export default function TournamentDetails() {
         >
           {/* Tournament Image/Banner */}
           <div className="relative h-48 md:h-64 rounded-lg overflow-hidden mb-6 bg-gradient-to-br from-primary/30 to-secondary/30">
+            {tournament.image && tournament.image !== '/placeholder.svg' && (
+              <img 
+                src={tournament.image} 
+                alt={tournament.name}
+                className="w-full h-full object-cover"
+              />
+            )}
             <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
             <div className="absolute bottom-4 left-4 right-4">
               <Badge variant="outline" className={statusColors[tournament.status]}>

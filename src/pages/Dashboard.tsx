@@ -51,6 +51,19 @@ export default function Dashboard() {
 
     const formData = new FormData(e.currentTarget);
     
+    // Handle image upload
+    const imageFile = formData.get('image') as File;
+    let imageUrl = '/placeholder.svg';
+    
+    if (imageFile && imageFile.size > 0) {
+      // Convert image to base64
+      const reader = new FileReader();
+      imageUrl = await new Promise((resolve) => {
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(imageFile);
+      });
+    }
+    
     const result = await createTournament({
       name: formData.get('name') as string,
       game: 'BGMI',
@@ -62,7 +75,7 @@ export default function Dashboard() {
       startTime: formData.get('startTime') as string,
       endDate: formData.get('endDate') as string || null,
       status: 'upcoming',
-      image: '/placeholder.svg',
+      image: imageUrl,
       description: formData.get('description') as string,
       rules: ['Standard tournament rules apply'],
       organizer: user?.username || 'Unknown',
@@ -131,6 +144,36 @@ export default function Dashboard() {
                 <div className="space-y-2">
                   <Label htmlFor="name">Tournament Name</Label>
                   <Input id="name" name="name" placeholder="Enter tournament name" required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="image">Tournament Image (Optional)</Label>
+                  <Input 
+                    id="image" 
+                    name="image" 
+                    type="file" 
+                    accept="image/*"
+                    className="cursor-pointer"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          const preview = document.getElementById('imagePreview') as HTMLImageElement;
+                          if (preview) {
+                            preview.src = reader.result as string;
+                            preview.classList.remove('hidden');
+                          }
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
+                  <img 
+                    id="imagePreview" 
+                    className="hidden w-full h-32 object-cover rounded-md mt-2" 
+                    alt="Preview" 
+                  />
+                  <p className="text-xs text-muted-foreground">Upload an image for your tournament (JPG, PNG, max 2MB)</p>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">

@@ -47,9 +47,16 @@ export default function TournamentCard({ tournament, featured = false }: Tournam
         </div>
       )}
 
-      {/* Image placeholder with gradient overlay */}
+      {/* Tournament Image */}
       <div className="relative h-40 bg-gradient-to-br from-primary/20 to-secondary/20 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-t from-card to-transparent" />
+        {tournament.image && tournament.image !== '/placeholder.svg' ? (
+          <img 
+            src={tournament.image} 
+            alt={tournament.name}
+            className="w-full h-full object-cover"
+          />
+        ) : null}
+        <div className="absolute inset-0 bg-gradient-to-t from-card/80 to-transparent" />
         <div className="absolute bottom-4 left-4">
           <Badge variant="outline" className={statusColors[tournament.status]}>
             {tournament.status.charAt(0).toUpperCase() + tournament.status.slice(1)}
