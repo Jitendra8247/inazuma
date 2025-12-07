@@ -136,13 +136,7 @@ export const tournamentsAPI = {
 
 // Registrations API
 export const registrationsAPI = {
-  registerForTournament: async (data: {
-    tournamentId: string;
-    teamName: string;
-    email: string;
-    phone: string;
-    inGameId: string;
-  }) => {
+  registerForTournament: async (data: any) => {
     const response = await api.post('/registrations', data);
     return response.data;
   },

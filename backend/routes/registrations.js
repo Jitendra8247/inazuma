@@ -12,7 +12,8 @@ const { protect } = require('../middleware/auth');
 // @access  Private
 router.post('/', protect, async (req, res, next) => {
   try {
-    const { tournamentId, teamName, email, phone, inGameId } = req.body;
+    console.log('Registration request body:', JSON.stringify(req.body, null, 2));
+    const { tournamentId, mode, player, teamName, player1, player2, player3, player4, email, phone } = req.body;
 
     // Check if tournament exists
     const tournament = await Tournament.findById(tournamentId);
@@ -20,6 +21,17 @@ router.post('/', protect, async (req, res, next) => {
       return res.status(404).json({
         success: false,
         message: 'Tournament not found'
+      });
+    }
+
+    // If mode is not provided, use tournament mode (for backward compatibility)
+    const registrationMode = mode || tournament.mode;
+
+    // Validate mode matches tournament mode
+    if (registrationMode !== tournament.mode) {
+      return res.status(400).json({
+        success: false,
+        message: `This tournament is ${tournament.mode} mode only`
       });
     }
 
@@ -92,16 +104,33 @@ router.post('/', protect, async (req, res, next) => {
       ]);
     }
 
-    // Create registration
-    const registration = await Registration.create({
+    // Build registration data based on mode
+    const registrationData = {
       tournamentId,
       playerId: req.user._id,
-      playerName: req.user.username,
-      teamName,
+      mode: registrationMode,
       email,
-      phone,
-      inGameId
-    });
+      phone
+    };
+
+    if (registrationMode === 'Solo') {
+      registrationData.player = player;
+    } else if (registrationMode === 'Duo') {
+      registrationData.teamName = teamName;
+      registrationData.player1 = player1;
+      registrationData.player2 = player2;
+    } else if (registrationMode === 'Squad') {
+      registrationData.teamName = teamName;
+      registrationData.player1 = player1;
+      registrationData.player2 = player2;
+      registrationData.player3 = player3;
+      registrationData.player4 = player4;
+    }
+    
+    console.log('Registration data to save:', JSON.stringify(registrationData, null, 2));
+
+    // Create registration
+    const registration = await Registration.create(registrationData);
 
     // Update tournament registered count
     await tournament.updateRegisteredCount();
@@ -111,6 +140,17 @@ router.post('/', protect, async (req, res, next) => {
       registration
     });
   } catch (error) {
+    console.error('Registration error:', error);
+    
+    // Handle Mongoose validation errors
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        message: `Registration validation failed: ${messages.join(', ')}`
+      });
+    }
+    
     next(error);
   }
 });

@@ -177,18 +177,12 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
 
   // Register a player/team for a tournament - uses API (backend handles wallet deduction)
   const registerForTournament = useCallback(async (
-    registration: Omit<Registration, 'id' | 'registeredAt' | 'status'>
+    registration: any
   ): Promise<{ success: boolean; error?: string }> => {
     setIsLoading(true);
 
     try {
-      const response = await registrationsAPI.registerForTournament({
-        tournamentId: registration.tournamentId,
-        teamName: registration.teamName,
-        email: registration.email,
-        phone: registration.phone,
-        inGameId: registration.inGameId
-      });
+      const response = await registrationsAPI.registerForTournament(registration);
 
       if (response.success) {
         // Refresh both tournaments and registrations to get updated data

@@ -15,25 +15,59 @@ import { useTournaments } from '@/context/TournamentContext';
 import { useAuth } from '@/context/AuthContext';
 import { useWallet } from '@/context/WalletContext';
 
-// Validation schema
-const registrationSchema = z.object({
+// Player details schema
+const playerSchema = z.object({
+  inGameName: z.string()
+    .min(3, 'In-game name must be at least 3 characters')
+    .max(20, 'In-game name must be less than 20 characters'),
+  bgmiId: z.string()
+    .min(5, 'BGMI ID must be at least 5 characters')
+    .max(20, 'BGMI ID must be less than 20 characters'),
+});
+
+// Solo mode validation schema
+const soloRegistrationSchema = z.object({
+  player: playerSchema,
+  email: z.string().email('Invalid email address'),
+  phone: z.string()
+    .regex(/^[6-9]\d{9}$/, 'Enter a valid 10-digit Indian phone number'),
+  agreeToRules: z.boolean().refine(val => val === true, 'You must agree to the tournament rules'),
+});
+
+// Duo mode validation schema
+const duoRegistrationSchema = z.object({
   teamName: z.string()
     .min(3, 'Team name must be at least 3 characters')
     .max(30, 'Team name must be less than 30 characters')
     .regex(/^[a-zA-Z0-9\s_-]+$/, 'Team name can only contain letters, numbers, spaces, underscores, and hyphens'),
-  playerName: z.string()
-    .min(3, 'Player name must be at least 3 characters')
-    .max(20, 'Player name must be less than 20 characters'),
+  player1: playerSchema,
+  player2: playerSchema,
   email: z.string().email('Invalid email address'),
   phone: z.string()
     .regex(/^[6-9]\d{9}$/, 'Enter a valid 10-digit Indian phone number'),
-  inGameId: z.string()
-    .min(5, 'In-game ID must be at least 5 characters')
-    .max(20, 'In-game ID must be less than 20 characters'),
   agreeToRules: z.boolean().refine(val => val === true, 'You must agree to the tournament rules'),
 });
 
-type RegistrationFormData = z.infer<typeof registrationSchema>;
+// Squad mode validation schema
+const squadRegistrationSchema = z.object({
+  teamName: z.string()
+    .min(3, 'Team name must be at least 3 characters')
+    .max(30, 'Team name must be less than 30 characters')
+    .regex(/^[a-zA-Z0-9\s_-]+$/, 'Team name can only contain letters, numbers, spaces, underscores, and hyphens'),
+  player1: playerSchema,
+  player2: playerSchema,
+  player3: playerSchema,
+  player4: playerSchema,
+  email: z.string().email('Invalid email address'),
+  phone: z.string()
+    .regex(/^[6-9]\d{9}$/, 'Enter a valid 10-digit Indian phone number'),
+  agreeToRules: z.boolean().refine(val => val === true, 'You must agree to the tournament rules'),
+});
+
+type SoloRegistrationFormData = z.infer<typeof soloRegistrationSchema>;
+type DuoRegistrationFormData = z.infer<typeof duoRegistrationSchema>;
+type SquadRegistrationFormData = z.infer<typeof squadRegistrationSchema>;
+type RegistrationFormData = SoloRegistrationFormData | DuoRegistrationFormData | SquadRegistrationFormData;
 
 export default function Registration() {
   const { id } = useParams<{ id: string }>();
@@ -46,15 +80,29 @@ export default function Registration() {
 
   const tournament = getTournamentById(id || '');
 
+  // Select schema based on tournament mode
+  const getSchema = () => {
+    if (!tournament) return soloRegistrationSchema;
+    switch (tournament.mode) {
+      case 'Solo':
+        return soloRegistrationSchema;
+      case 'Duo':
+        return duoRegistrationSchema;
+      case 'Squad':
+        return squadRegistrationSchema;
+      default:
+        return soloRegistrationSchema;
+    }
+  };
+
   const {
     register,
     handleSubmit,
     formState: { errors },
     reset
   } = useForm<RegistrationFormData>({
-    resolver: zodResolver(registrationSchema),
+    resolver: zodResolver(getSchema()),
     defaultValues: {
-      playerName: user?.username || '',
       email: user?.email || '',
       agreeToRules: false
     }
@@ -122,16 +170,33 @@ export default function Registration() {
       }
     }
 
-    // Register for tournament (backend handles wallet deduction automatically)
-    const result = await registerForTournament({
+    // Build registration payload based on mode
+    const registrationPayload: any = {
       tournamentId: tournament.id,
-      playerId: user?.id || '',
-      playerName: data.playerName,
-      teamName: data.teamName,
+      mode: tournament.mode,
       email: data.email,
       phone: data.phone,
-      inGameId: data.inGameId
-    });
+    };
+
+    if (tournament.mode === 'Solo') {
+      const soloData = data as SoloRegistrationFormData;
+      registrationPayload.player = soloData.player;
+    } else if (tournament.mode === 'Duo') {
+      const duoData = data as DuoRegistrationFormData;
+      registrationPayload.teamName = duoData.teamName;
+      registrationPayload.player1 = duoData.player1;
+      registrationPayload.player2 = duoData.player2;
+    } else if (tournament.mode === 'Squad') {
+      const squadData = data as SquadRegistrationFormData;
+      registrationPayload.teamName = squadData.teamName;
+      registrationPayload.player1 = squadData.player1;
+      registrationPayload.player2 = squadData.player2;
+      registrationPayload.player3 = squadData.player3;
+      registrationPayload.player4 = squadData.player4;
+    }
+
+    // Register for tournament (backend handles wallet deduction automatically)
+    const result = await registerForTournament(registrationPayload);
 
     setIsSubmitting(false);
 
@@ -191,76 +256,207 @@ export default function Registration() {
           className="p-6 rounded-lg bg-card border border-border/50"
         >
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            {/* Team Name */}
-            <div className="space-y-2">
-              <Label htmlFor="teamName">Team Name *</Label>
-              <Input
-                id="teamName"
-                placeholder="Enter your team name"
-                {...register('teamName')}
-                className={errors.teamName ? 'border-destructive' : ''}
-              />
-              {errors.teamName && (
-                <p className="text-sm text-destructive">{errors.teamName.message}</p>
-              )}
+            {/* Mode Badge */}
+            <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
+              <p className="text-sm font-medium text-primary">
+                Tournament Mode: <span className="font-bold">{tournament.mode}</span>
+              </p>
             </div>
 
-            {/* Player Name */}
-            <div className="space-y-2">
-              <Label htmlFor="playerName">Player Name *</Label>
-              <Input
-                id="playerName"
-                placeholder="Enter your player name"
-                {...register('playerName')}
-                className={errors.playerName ? 'border-destructive' : ''}
-              />
-              {errors.playerName && (
-                <p className="text-sm text-destructive">{errors.playerName.message}</p>
-              )}
-            </div>
+            {/* Solo Mode Form */}
+            {tournament.mode === 'Solo' && (
+              <>
+                <div className="space-y-4 p-4 rounded-lg bg-muted/30 border border-border/50">
+                  <h3 className="font-semibold text-sm text-muted-foreground">Player Details</h3>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="player.inGameName">In-Game Name *</Label>
+                    <Input
+                      id="player.inGameName"
+                      placeholder="Your in-game name"
+                      {...register('player.inGameName')}
+                      className={errors.player?.inGameName ? 'border-destructive' : ''}
+                    />
+                    {errors.player?.inGameName && (
+                      <p className="text-sm text-destructive">{errors.player.inGameName.message}</p>
+                    )}
+                  </div>
 
-            {/* Email */}
-            <div className="space-y-2">
-              <Label htmlFor="email">Email *</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="your@email.com"
-                {...register('email')}
-                className={errors.email ? 'border-destructive' : ''}
-              />
-              {errors.email && (
-                <p className="text-sm text-destructive">{errors.email.message}</p>
-              )}
-            </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="player.bgmiId">BGMI ID *</Label>
+                    <Input
+                      id="player.bgmiId"
+                      placeholder="Your BGMI player ID"
+                      {...register('player.bgmiId')}
+                      className={errors.player?.bgmiId ? 'border-destructive' : ''}
+                    />
+                    {errors.player?.bgmiId && (
+                      <p className="text-sm text-destructive">{errors.player.bgmiId.message}</p>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
 
-            {/* Phone */}
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number *</Label>
-              <Input
-                id="phone"
-                type="tel"
-                placeholder="10-digit mobile number"
-                {...register('phone')}
-                className={errors.phone ? 'border-destructive' : ''}
-              />
-              {errors.phone && (
-                <p className="text-sm text-destructive">{errors.phone.message}</p>
-              )}
-            </div>
+            {/* Duo Mode Form */}
+            {tournament.mode === 'Duo' && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="teamName">Team Name *</Label>
+                  <Input
+                    id="teamName"
+                    placeholder="Enter your team name"
+                    {...register('teamName')}
+                    className={errors.teamName ? 'border-destructive' : ''}
+                  />
+                  {errors.teamName && (
+                    <p className="text-sm text-destructive">{errors.teamName.message}</p>
+                  )}
+                </div>
 
-            {/* In-Game ID */}
-            <div className="space-y-2">
-              <Label htmlFor="inGameId">In-Game ID *</Label>
-              <Input
-                id="inGameId"
-                placeholder="Your BGMI player ID"
-                {...register('inGameId')}
-                className={errors.inGameId ? 'border-destructive' : ''}
-              />
-              {errors.inGameId && (
-                <p className="text-sm text-destructive">{errors.inGameId.message}</p>
-              )}
+                <div className="space-y-4 p-4 rounded-lg bg-muted/30 border border-border/50">
+                  <h3 className="font-semibold text-sm text-muted-foreground">Player 1 Details</h3>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="player1.inGameName">In-Game Name *</Label>
+                    <Input
+                      id="player1.inGameName"
+                      placeholder="Player 1 in-game name"
+                      {...register('player1.inGameName')}
+                      className={errors.player1?.inGameName ? 'border-destructive' : ''}
+                    />
+                    {errors.player1?.inGameName && (
+                      <p className="text-sm text-destructive">{errors.player1.inGameName.message}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="player1.bgmiId">BGMI ID *</Label>
+                    <Input
+                      id="player1.bgmiId"
+                      placeholder="Player 1 BGMI ID"
+                      {...register('player1.bgmiId')}
+                      className={errors.player1?.bgmiId ? 'border-destructive' : ''}
+                    />
+                    {errors.player1?.bgmiId && (
+                      <p className="text-sm text-destructive">{errors.player1.bgmiId.message}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-4 p-4 rounded-lg bg-muted/30 border border-border/50">
+                  <h3 className="font-semibold text-sm text-muted-foreground">Player 2 Details</h3>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="player2.inGameName">In-Game Name *</Label>
+                    <Input
+                      id="player2.inGameName"
+                      placeholder="Player 2 in-game name"
+                      {...register('player2.inGameName')}
+                      className={errors.player2?.inGameName ? 'border-destructive' : ''}
+                    />
+                    {errors.player2?.inGameName && (
+                      <p className="text-sm text-destructive">{errors.player2.inGameName.message}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="player2.bgmiId">BGMI ID *</Label>
+                    <Input
+                      id="player2.bgmiId"
+                      placeholder="Player 2 BGMI ID"
+                      {...register('player2.bgmiId')}
+                      className={errors.player2?.bgmiId ? 'border-destructive' : ''}
+                    />
+                    {errors.player2?.bgmiId && (
+                      <p className="text-sm text-destructive">{errors.player2.bgmiId.message}</p>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Squad Mode Form */}
+            {tournament.mode === 'Squad' && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="teamName">Team Name *</Label>
+                  <Input
+                    id="teamName"
+                    placeholder="Enter your team name"
+                    {...register('teamName')}
+                    className={errors.teamName ? 'border-destructive' : ''}
+                  />
+                  {errors.teamName && (
+                    <p className="text-sm text-destructive">{errors.teamName.message}</p>
+                  )}
+                </div>
+
+                {[1, 2, 3, 4].map((playerNum) => (
+                  <div key={playerNum} className="space-y-4 p-4 rounded-lg bg-muted/30 border border-border/50">
+                    <h3 className="font-semibold text-sm text-muted-foreground">Player {playerNum} Details</h3>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor={`player${playerNum}.inGameName`}>In-Game Name *</Label>
+                      <Input
+                        id={`player${playerNum}.inGameName`}
+                        placeholder={`Player ${playerNum} in-game name`}
+                        {...register(`player${playerNum}.inGameName` as any)}
+                        className={(errors as any)[`player${playerNum}`]?.inGameName ? 'border-destructive' : ''}
+                      />
+                      {(errors as any)[`player${playerNum}`]?.inGameName && (
+                        <p className="text-sm text-destructive">{(errors as any)[`player${playerNum}`].inGameName.message}</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor={`player${playerNum}.bgmiId`}>BGMI ID *</Label>
+                      <Input
+                        id={`player${playerNum}.bgmiId`}
+                        placeholder={`Player ${playerNum} BGMI ID`}
+                        {...register(`player${playerNum}.bgmiId` as any)}
+                        className={(errors as any)[`player${playerNum}`]?.bgmiId ? 'border-destructive' : ''}
+                      />
+                      {(errors as any)[`player${playerNum}`]?.bgmiId && (
+                        <p className="text-sm text-destructive">{(errors as any)[`player${playerNum}`].bgmiId.message}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </>
+            )}
+
+            {/* Contact Information - Common for all modes */}
+            <div className="space-y-4 pt-4 border-t border-border/50">
+              <h3 className="font-semibold text-sm text-muted-foreground">Contact Information</h3>
+              
+              <div className="space-y-2">
+                <Label htmlFor="email">Email *</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="your@email.com"
+                  {...register('email')}
+                  className={errors.email ? 'border-destructive' : ''}
+                />
+                {errors.email && (
+                  <p className="text-sm text-destructive">{errors.email.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone Number *</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="10-digit mobile number"
+                  {...register('phone')}
+                  className={errors.phone ? 'border-destructive' : ''}
+                />
+                {errors.phone && (
+                  <p className="text-sm text-destructive">{errors.phone.message}</p>
+                )}
+              </div>
             </div>
 
             {/* Rules Agreement */}
