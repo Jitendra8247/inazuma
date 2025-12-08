@@ -35,7 +35,8 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   // Fetch all tournaments from API
   const refreshTournaments = useCallback(async () => {
     try {
-      const response = await tournamentsAPI.getAllTournaments();
+      // Include archived tournaments so newly created ones show up
+      const response = await tournamentsAPI.getAllTournaments({ includeArchived: 'true' });
       if (response.success && response.tournaments) {
         const formattedTournaments = response.tournaments.map((t: any) => ({
           id: t._id || t.id,

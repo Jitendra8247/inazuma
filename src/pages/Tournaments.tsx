@@ -6,6 +6,7 @@ import { Trophy } from 'lucide-react';
 import TournamentCard from '@/components/tournaments/TournamentCard';
 import Filters from '@/components/tournaments/Filters';
 import { useTournaments } from '@/context/TournamentContext';
+import { getRealTimeStatus } from '@/utils/tournamentStatus';
 
 export default function Tournaments() {
   const { tournaments } = useTournaments();
@@ -18,13 +19,21 @@ export default function Tournaments() {
   // Apply filters
   const filteredTournaments = useMemo(() => {
     return tournaments.filter(tournament => {
+      // Get real-time status
+      const realTimeStatus = getRealTimeStatus(tournament);
+      
+      // By default, exclude completed tournaments unless specifically filtered
+      if (statusFilter === 'all' && realTimeStatus === 'completed') {
+        return false;
+      }
+      
       // Search filter
       const matchesSearch = tournament.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         tournament.game.toLowerCase().includes(searchQuery.toLowerCase()) ||
         tournament.organizer.toLowerCase().includes(searchQuery.toLowerCase());
       
-      // Status filter
-      const matchesStatus = statusFilter === 'all' || tournament.status === statusFilter;
+      // Status filter (use real-time status)
+      const matchesStatus = statusFilter === 'all' || realTimeStatus === statusFilter;
       
       // Mode filter
       const matchesMode = modeFilter === 'all' || tournament.mode === modeFilter;

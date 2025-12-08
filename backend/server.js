@@ -17,8 +17,9 @@ app.use(cors({
   ],
   credentials: true
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Increase payload size limit for image uploads (base64 images can be large)
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(morgan('dev'));
 
 // Database Connection
@@ -67,8 +68,9 @@ app.use((req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
-// Start tournament scheduler
+// Start tournament scheduler and player stats updater
 const { startTournamentScheduler } = require('./utils/tournamentScheduler');
+const { startPlayerStatsUpdater } = require('./utils/updatePlayerStats');
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
@@ -77,4 +79,7 @@ app.listen(PORT, '0.0.0.0', () => {
   
   // Start the tournament auto-archiver
   startTournamentScheduler();
+  
+  // Start the player stats updater
+  startPlayerStatsUpdater();
 });

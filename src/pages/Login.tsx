@@ -38,15 +38,21 @@ export default function Login() {
   });
 
   const onSubmit = async (data: LoginFormData) => {
+    console.log('🔑 Login form submitted:', { email: data.email });
+    
     const result = await login(data.email, data.password);
     
+    console.log('🔑 Login result:', { success: result.success, error: result.error });
+    
     if (result.success) {
+      console.log('✅ Login successful, navigating to:', from);
       toast({
         title: 'Welcome back!',
         description: 'You have been logged in successfully.',
       });
       navigate(from, { replace: true });
     } else {
+      console.error('❌ Login failed:', result.error);
       toast({
         title: 'Login Failed',
         description: result.error,
@@ -131,16 +137,7 @@ export default function Login() {
               )}
             </div>
 
-            {/* Demo Credentials */}
-            <div className="p-3 rounded bg-muted/50 border border-border/50">
-              <p className="text-xs text-muted-foreground mb-1">Demo Credentials:</p>
-              <p className="text-xs">
-                <strong>Player:</strong> player@demo.com / demo123
-              </p>
-              <p className="text-xs">
-                <strong>Organizer:</strong> organizer@demo.com / demo123
-              </p>
-            </div>
+
 
             {/* Submit Button */}
             <Button

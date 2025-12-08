@@ -47,6 +47,7 @@ export interface User {
     tournamentsPlayed: number;
     tournamentsWon: number;
     totalEarnings: number;
+    totalFinishes: number;
     rank: string;
   };
 }

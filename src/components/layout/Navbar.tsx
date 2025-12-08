@@ -78,9 +78,9 @@ export default function Navbar() {
                       </Link>
                     </Button>
                     <Button variant="ghost" size="sm" asChild>
-                      <Link to="/admin/players">
-                        <Users className="h-4 w-4 mr-2" />
-                        Players
+                      <Link to="/admin/player-stats">
+                        <Trophy className="h-4 w-4 mr-2" />
+                        Player Stats
                       </Link>
                     </Button>
                     <Button variant="ghost" size="sm" asChild>

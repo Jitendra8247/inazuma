@@ -38,6 +38,7 @@ const userSchema = new mongoose.Schema({
     tournamentsPlayed: { type: Number, default: 0 },
     tournamentsWon: { type: Number, default: 0 },
     totalEarnings: { type: Number, default: 0 },
+    totalFinishes: { type: Number, default: 0 },
     rank: { type: String, default: 'Bronze' }
   },
   isActive: {

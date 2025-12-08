@@ -31,8 +31,14 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      window.location.href = '/login';
+      // Only redirect if not already on login page and not during login attempt
+      const isLoginRequest = error.config?.url?.includes('/auth/login');
+      const isOnLoginPage = window.location.pathname === '/login';
+      
+      if (!isLoginRequest && !isOnLoginPage) {
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
@@ -98,7 +104,7 @@ export const usersAPI = {
 
 // Tournaments API
 export const tournamentsAPI = {
-  getAllTournaments: async (filters?: { status?: string; game?: string; mode?: string }) => {
+  getAllTournaments: async (filters?: { status?: string; game?: string; mode?: string; includeArchived?: string }) => {
     const response = await api.get('/tournaments', { params: filters });
     return response.data;
   },

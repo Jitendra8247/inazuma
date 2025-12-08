@@ -26,6 +26,7 @@ import Profile from "./pages/Profile";
 import Wallet from "./pages/Wallet";
 import AdminWallets from "./pages/AdminWallets";
 import AdminPlayers from "./pages/AdminPlayers";
+import AdminPlayerStats from "./pages/AdminPlayerStats";
 import MyTournaments from "./pages/MyTournaments";
 import NotFound from "./pages/NotFound";
 
@@ -87,6 +88,11 @@ const App = () => (
                     <Route path="/admin/players" element={
                       <ProtectedRoute requiredRole="organizer">
                         <AdminPlayers />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/admin/player-stats" element={
+                      <ProtectedRoute requiredRole="organizer">
+                        <AdminPlayerStats />
                       </ProtectedRoute>
                     } />
                     

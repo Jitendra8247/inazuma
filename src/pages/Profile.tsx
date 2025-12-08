@@ -1,10 +1,10 @@
 // Profile Page - User profile with editable info and performance stats
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   User, Mail, Trophy, Target, Gamepad2, 
-  Wallet, Edit2, Save, X, Award, Copy 
+  Wallet, Edit2, Save, X, Award, Copy, RefreshCw 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +13,7 @@ import StatsCard from '@/components/dashboard/StatsCard';
 import { useAuth } from '@/context/AuthContext';
 import { useTournaments } from '@/context/TournamentContext';
 import { useToast } from '@/hooks/use-toast';
+import { usersAPI } from '@/services/api';
 
 export default function Profile() {
   const { user, updateProfile } = useAuth();
@@ -20,6 +21,70 @@ export default function Profile() {
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [editedUsername, setEditedUsername] = useState(user?.username || '');
+  const [currentUser, setCurrentUser] = useState(user);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Fetch fresh user data on mount
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (user?.id) {
+        try {
+          console.log('🔄 Fetching user data for ID:', user.id);
+          const response = await usersAPI.getUserById(user.id);
+          console.log('📊 User data response:', response);
+          if (response.success && response.user) {
+            const updatedUser = {
+              id: response.user._id || response.user.id,
+              email: response.user.email,
+              username: response.user.username,
+              avatar: response.user.avatar,
+              role: response.user.role,
+              stats: response.user.stats
+            };
+            console.log('✅ Setting current user:', updatedUser);
+            setCurrentUser(updatedUser);
+          }
+        } catch (error) {
+          console.error('❌ Error fetching user data:', error);
+        }
+      }
+    };
+    fetchUserData();
+  }, [user?.id]);
+
+  const handleRefreshStats = async () => {
+    setIsRefreshing(true);
+    try {
+      console.log('🔄 Manually refreshing stats for ID:', user?.id);
+      const response = await usersAPI.getUserById(user?.id || '');
+      console.log('📊 Refresh response:', response);
+      if (response.success && response.user) {
+        const updatedUser = {
+          id: response.user._id || response.user.id,
+          email: response.user.email,
+          username: response.user.username,
+          avatar: response.user.avatar,
+          role: response.user.role,
+          stats: response.user.stats
+        };
+        console.log('✅ Updated user stats:', updatedUser.stats);
+        setCurrentUser(updatedUser);
+        toast({
+          title: 'Stats Refreshed',
+          description: 'Your statistics have been updated',
+        });
+      }
+    } catch (error) {
+      console.error('❌ Error refreshing stats:', error);
+      toast({
+        title: 'Refresh Failed',
+        description: 'Failed to refresh statistics',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const handleCopyUserId = () => {
     if (user?.id) {
@@ -33,16 +98,6 @@ export default function Profile() {
 
   const registrations = getRegistrationsByPlayer(user?.id || '');
 
-  // Mock performance stats
-  const performanceStats = {
-    totalKills: 2456,
-    avgKillsPerMatch: 8.5,
-    winRate: '23%',
-    topTenRate: '45%',
-    avgDamage: 1250,
-    avgSurvivalTime: '18:30'
-  };
-
   const handleSaveProfile = () => {
     updateProfile({ username: editedUsername });
     setIsEditing(false);
@@ -52,18 +107,7 @@ export default function Profile() {
     });
   };
 
-  const getRankBadge = (rank: string) => {
-    const rankColors: Record<string, string> = {
-      'Conqueror': 'from-neon-orange to-destructive',
-      'Ace': 'from-neon-magenta to-secondary',
-      'Crown': 'from-primary to-neon-cyan',
-      'Diamond': 'from-neon-purple to-secondary',
-      'Platinum': 'from-muted to-border',
-      'Gold': 'from-neon-orange to-yellow-600',
-      'Bronze': 'from-orange-700 to-orange-900'
-    };
-    return rankColors[rank] || 'from-muted to-border';
-  };
+
 
   return (
     <main className="min-h-screen py-8">
@@ -76,15 +120,10 @@ export default function Profile() {
         >
           <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
             {/* Avatar */}
-            <div className="relative">
-              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary/30 to-secondary/30 flex items-center justify-center">
-                <span className="font-display text-3xl font-bold text-primary">
-                  {user?.username.charAt(0).toUpperCase()}
-                </span>
-              </div>
-              <div className={`absolute -bottom-2 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-gradient-to-r ${getRankBadge(user?.stats.rank || 'Bronze')}`}>
-                <span className="text-xs font-bold text-white">{user?.stats.rank}</span>
-              </div>
+            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary/30 to-secondary/30 flex items-center justify-center">
+              <span className="font-display text-3xl font-bold text-primary">
+                {user?.username.charAt(0).toUpperCase()}
+              </span>
             </div>
 
             {/* Info */}
@@ -165,40 +204,45 @@ export default function Profile() {
           transition={{ delay: 0.1 }}
           className="mb-8"
         >
-          <h2 className="font-display text-xl font-semibold mb-4">Career Statistics</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-display text-xl font-semibold">Career Statistics</h2>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefreshStats}
+              disabled={isRefreshing}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <StatsCard
               title="Tournaments Played"
-              value={user?.stats.tournamentsPlayed || 0}
+              value={currentUser?.stats.tournamentsPlayed || 0}
               icon={Trophy}
               variant="primary"
               index={0}
             />
             <StatsCard
               title="Tournaments Won"
-              value={user?.stats.tournamentsWon || 0}
+              value={currentUser?.stats.tournamentsWon || 0}
               icon={Award}
               variant="accent"
               index={1}
             />
             <StatsCard
               title="Total Earnings"
-              value={`₹${((user?.stats.totalEarnings || 0) / 1000).toFixed(0)}K`}
+              value={`₹${((currentUser?.stats.totalEarnings || 0) / 1000).toFixed(0)}K`}
               icon={Wallet}
               variant="secondary"
               index={2}
-            />
-            <StatsCard
-              title="Current Rank"
-              value={user?.stats.rank || 'N/A'}
-              icon={Target}
-              index={3}
             />
           </div>
         </motion.div>
 
         {/* Performance Stats */}
-        {user?.role === 'player' && (
+        {currentUser?.role === 'player' && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -206,48 +250,24 @@ export default function Profile() {
             className="mb-8"
           >
             <h2 className="font-display text-xl font-semibold mb-4">Performance Stats</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="p-4 rounded-lg bg-card border border-border/50">
                 <div className="flex items-center gap-2 mb-2">
                   <Target className="h-5 w-5 text-destructive" />
-                  <span className="text-sm text-muted-foreground">Total Kills</span>
+                  <span className="text-sm text-muted-foreground">Total Finishes</span>
                 </div>
-                <p className="font-display text-2xl font-bold">{performanceStats.totalKills}</p>
+                <p className="font-display text-2xl font-bold">{currentUser?.stats.totalFinishes || 0}</p>
               </div>
               <div className="p-4 rounded-lg bg-card border border-border/50">
                 <div className="flex items-center gap-2 mb-2">
                   <Gamepad2 className="h-5 w-5 text-primary" />
-                  <span className="text-sm text-muted-foreground">Avg Kills/Match</span>
+                  <span className="text-sm text-muted-foreground">Avg Finishes</span>
                 </div>
-                <p className="font-display text-2xl font-bold">{performanceStats.avgKillsPerMatch}</p>
-              </div>
-              <div className="p-4 rounded-lg bg-card border border-border/50">
-                <div className="flex items-center gap-2 mb-2">
-                  <Trophy className="h-5 w-5 text-accent" />
-                  <span className="text-sm text-muted-foreground">Win Rate</span>
-                </div>
-                <p className="font-display text-2xl font-bold">{performanceStats.winRate}</p>
-              </div>
-              <div className="p-4 rounded-lg bg-card border border-border/50">
-                <div className="flex items-center gap-2 mb-2">
-                  <Award className="h-5 w-5 text-secondary" />
-                  <span className="text-sm text-muted-foreground">Top 10 Rate</span>
-                </div>
-                <p className="font-display text-2xl font-bold">{performanceStats.topTenRate}</p>
-              </div>
-              <div className="p-4 rounded-lg bg-card border border-border/50">
-                <div className="flex items-center gap-2 mb-2">
-                  <Target className="h-5 w-5 text-neon-orange" />
-                  <span className="text-sm text-muted-foreground">Avg Damage</span>
-                </div>
-                <p className="font-display text-2xl font-bold">{performanceStats.avgDamage}</p>
-              </div>
-              <div className="p-4 rounded-lg bg-card border border-border/50">
-                <div className="flex items-center gap-2 mb-2">
-                  <Gamepad2 className="h-5 w-5 text-neon-purple" />
-                  <span className="text-sm text-muted-foreground">Avg Survival</span>
-                </div>
-                <p className="font-display text-2xl font-bold">{performanceStats.avgSurvivalTime}</p>
+                <p className="font-display text-2xl font-bold">
+                  {currentUser?.stats.tournamentsPlayed && currentUser?.stats.totalFinishes 
+                    ? (currentUser.stats.totalFinishes / currentUser.stats.tournamentsPlayed).toFixed(1)
+                    : '0.0'}
+                </p>
               </div>
             </div>
           </motion.div>

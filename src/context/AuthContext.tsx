@@ -95,8 +95,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               role: response.user.role,
               stats: response.user.stats
             });
+          } else {
+            // Invalid response, clear token
+            localStorage.removeItem('token');
           }
         } catch (error) {
+          console.error('Auth check failed:', error);
           localStorage.removeItem('token');
         }
       }
@@ -112,7 +116,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const response = await authAPI.login(email, password);
       
-      if (response.success && response.user) {
+      if (response.success && response.user && response.token) {
+        // Set user state
         setUser({
           id: response.user.id,
           email: response.user.email,
@@ -126,12 +131,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       
       setIsLoading(false);
-      return { success: false, error: 'Login failed' };
+      return { success: false, error: response.message || 'Login failed' };
     } catch (error: any) {
+      console.error('Login error in AuthContext:', error);
       setIsLoading(false);
+      
+      // Clear any invalid token
+      localStorage.removeItem('token');
+      
       return { 
         success: false, 
-        error: error.response?.data?.message || 'Invalid credentials'
+        error: error.response?.data?.message || error.message || 'Invalid credentials'
       };
     }
   }, []);

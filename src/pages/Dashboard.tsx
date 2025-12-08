@@ -28,6 +28,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useTournaments } from '@/context/TournamentContext';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
+import { getRealTimeStatus } from '@/utils/tournamentStatus';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -58,6 +59,17 @@ export default function Dashboard() {
     let imageUrl = '/placeholder.svg';
     
     if (imageFile && imageFile.size > 0) {
+      // Check file size (max 2MB)
+      if (imageFile.size > 2 * 1024 * 1024) {
+        toast({
+          title: 'Image Too Large',
+          description: 'Please select an image smaller than 2MB',
+          variant: 'destructive',
+        });
+        setIsCreating(false);
+        return;
+      }
+      
       // Convert image to base64
       const reader = new FileReader();
       imageUrl = await new Promise((resolve) => {
@@ -66,7 +78,7 @@ export default function Dashboard() {
       });
     }
     
-    const result = await createTournament({
+    const tournamentData = {
       name: formData.get('name') as string,
       game: 'BGMI',
       mode: formData.get('mode') as string,
@@ -81,18 +93,32 @@ export default function Dashboard() {
       description: formData.get('description') as string,
       rules: ['Standard tournament rules apply'],
       organizer: user?.username || 'Unknown',
-      organizerId: user?._id,
+      organizerId: user?.id || '',
       region: 'India',
       platform: 'Mobile'
-    });
+    };
+
+    console.log('🎮 Creating tournament:', tournamentData);
+    
+    const result = await createTournament(tournamentData);
+    
+    console.log('🎮 Tournament creation result:', result);
 
     setIsCreating(false);
-    setIsCreateDialogOpen(false);
 
     if (result.success) {
+      setIsCreateDialogOpen(false);
       toast({
         title: 'Tournament Created!',
         description: 'Your tournament has been created successfully.',
+      });
+      // Refresh the page to show the new tournament
+      window.location.reload();
+    } else {
+      toast({
+        title: 'Failed to Create Tournament',
+        description: 'There was an error creating the tournament. Check console for details.',
+        variant: 'destructive',
       });
     }
   };
@@ -443,7 +469,9 @@ export default function Dashboard() {
                 </tr>
               </thead>
               <tbody>
-                {tournaments.slice(0, 5).map((tournament) => (
+                {tournaments.slice(0, 5).map((tournament) => {
+                  const realTimeStatus = getRealTimeStatus(tournament);
+                  return (
                   <tr key={tournament.id} className="border-t border-border/50 hover:bg-muted/20">
                     <td className="p-4">
                       <div className="flex items-center gap-3">
@@ -456,11 +484,11 @@ export default function Dashboard() {
                     </td>
                     <td className="p-4">
                       <span className={`px-2 py-1 rounded text-xs ${
-                        tournament.status === 'upcoming' ? 'bg-accent/20 text-accent' :
-                        tournament.status === 'ongoing' ? 'bg-primary/20 text-primary' :
+                        realTimeStatus === 'upcoming' ? 'bg-accent/20 text-accent' :
+                        realTimeStatus === 'ongoing' ? 'bg-primary/20 text-primary' :
                         'bg-muted text-muted-foreground'
                       }`}>
-                        {tournament.status}
+                        {realTimeStatus}
                       </span>
                     </td>
                     <td className="p-4 text-sm">
@@ -504,7 +532,8 @@ export default function Dashboard() {
                       </DropdownMenu>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>

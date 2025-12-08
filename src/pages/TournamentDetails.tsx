@@ -9,13 +9,12 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import PlayerCard from '@/components/tournaments/PlayerCard';
-import BracketView from '@/components/tournaments/BracketView';
+import RegisteredTeamsList from '@/components/tournaments/RegisteredTeamsList';
 import NotificationBanner from '@/components/common/NotificationBanner';
 import RoomCredentialsCard from '@/components/tournaments/RoomCredentialsCard';
 import { useTournaments } from '@/context/TournamentContext';
 import { useAuth } from '@/context/AuthContext';
-import { mockPlayers, mockBracket } from '@/data/mockData';
+import { getRealTimeStatus, canRegister as canRegisterUtil } from '@/utils/tournamentStatus';
 
 export default function TournamentDetails() {
   const { id } = useParams<{ id: string }>();
@@ -210,8 +209,7 @@ export default function TournamentDetails() {
           <Tabs defaultValue="rules" className="space-y-6">
             <TabsList className="bg-card border border-border/50">
               <TabsTrigger value="rules">Rules</TabsTrigger>
-              <TabsTrigger value="players">Players</TabsTrigger>
-              <TabsTrigger value="bracket">Bracket</TabsTrigger>
+              <TabsTrigger value="teams">Registered Teams</TabsTrigger>
             </TabsList>
 
             <TabsContent value="rules" className="space-y-4">
@@ -233,19 +231,8 @@ export default function TournamentDetails() {
               </div>
             </TabsContent>
 
-            <TabsContent value="players">
-              <div className="space-y-3">
-                {mockPlayers.map((player, index) => (
-                  <PlayerCard key={player.id} player={player} index={index} />
-                ))}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="bracket">
-              <div className="p-6 rounded-lg bg-card border border-border/50">
-                <h3 className="font-display text-lg font-semibold mb-6">Tournament Bracket</h3>
-                <BracketView matches={mockBracket} />
-              </div>
+            <TabsContent value="teams">
+              <RegisteredTeamsList tournamentId={tournament.id} />
             </TabsContent>
           </Tabs>
         </motion.div>

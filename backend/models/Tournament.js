@@ -103,6 +103,10 @@ const tournamentSchema = new mongoose.Schema({
   archivedAt: {
     type: Date,
     default: null
+  },
+  statsUpdated: {
+    type: Boolean,
+    default: false
   }
 }, {
   timestamps: true
