@@ -187,12 +187,20 @@ export default function Navbar() {
                           Dashboard
                         </Link>
                         <Link
-                          to="/admin/players"
+                          to="/admin/player-stats"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className="flex items-center gap-2 py-2 text-muted-foreground"
+                        >
+                          <Trophy className="h-4 w-4" />
+                          Player Stats
+                        </Link>
+                        <Link
+                          to="/admin/messages"
                           onClick={() => setIsMobileMenuOpen(false)}
                           className="flex items-center gap-2 py-2 text-muted-foreground"
                         >
                           <Users className="h-4 w-4" />
-                          Players
+                          Messages
                         </Link>
                         <Link
                           to="/admin/wallets"
