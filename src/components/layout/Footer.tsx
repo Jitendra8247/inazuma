@@ -43,14 +43,9 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link to="/register" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Join a Tournament
+                <Link to="/tournaments" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Browse Tournaments
                 </Link>
-              </li>
-              <li>
-                <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Leaderboards
-                </a>
               </li>
             </ul>
           </div>
@@ -60,24 +55,24 @@ export default function Footer() {
             <h4 className="font-display text-sm tracking-wide mb-4 text-foreground">Resources</h4>
             <ul className="space-y-2">
               <li>
-                <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                <Link to="/#how-it-works" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                   How It Works
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                <Link to="/rules" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                   Rules & Guidelines
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                <Link to="/faq" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                   FAQ
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                <Link to="/contact" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                   Support
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -87,19 +82,14 @@ export default function Footer() {
             <h4 className="font-display text-sm tracking-wide mb-4 text-foreground">Legal</h4>
             <ul className="space-y-2">
               <li>
-                <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                <Link to="/terms" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                   Terms of Service
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                <Link to="/privacy" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                   Privacy Policy
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Cookie Policy
-                </a>
+                </Link>
               </li>
             </ul>
           </div>

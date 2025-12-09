@@ -286,7 +286,7 @@ export default function AdminPlayerStats() {
                       <div className="text-center">
                         <p className="text-xs text-muted-foreground mb-1">Earnings</p>
                         <p className="font-semibold text-primary">
-                          ₹{((player.stats.totalEarnings || 0) / 1000).toFixed(0)}K
+                          ₹{(player.stats.totalEarnings || 0).toLocaleString()}
                         </p>
                       </div>
                       <div className="text-center">

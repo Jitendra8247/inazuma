@@ -28,6 +28,12 @@ import AdminWallets from "./pages/AdminWallets";
 import AdminPlayers from "./pages/AdminPlayers";
 import AdminPlayerStats from "./pages/AdminPlayerStats";
 import MyTournaments from "./pages/MyTournaments";
+import Rules from "./pages/Rules";
+import FAQ from "./pages/FAQ";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
+import Contact from "./pages/Contact";
+import AdminMessages from "./pages/AdminMessages";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -93,6 +99,20 @@ const App = () => (
                     <Route path="/admin/player-stats" element={
                       <ProtectedRoute requiredRole="organizer">
                         <AdminPlayerStats />
+                      </ProtectedRoute>
+                    } />
+                    
+                    {/* Public Info Pages */}
+                    <Route path="/rules" element={<Rules />} />
+                    <Route path="/faq" element={<FAQ />} />
+                    <Route path="/privacy" element={<Privacy />} />
+                    <Route path="/terms" element={<Terms />} />
+                    <Route path="/contact" element={<Contact />} />
+                    
+                    {/* Admin Messages */}
+                    <Route path="/admin/messages" element={
+                      <ProtectedRoute requiredRole="organizer">
+                        <AdminMessages />
                       </ProtectedRoute>
                     } />
                     

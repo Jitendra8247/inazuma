@@ -44,6 +44,16 @@ router.get('/:id', protect, async (req, res, next) => {
   }
 });
 
+// @route   POST /api/users/:id/test-update
+// @desc    Test update endpoint
+// @access  Private
+router.post('/:id/test-update', protect, async (req, res) => {
+  console.log('🧪 TEST UPDATE ENDPOINT HIT!');
+  console.log('User ID:', req.params.id);
+  console.log('Body:', req.body);
+  res.json({ success: true, message: 'Test endpoint working!' });
+});
+
 // @route   PUT /api/users/:id
 // @desc    Update user profile
 // @access  Private

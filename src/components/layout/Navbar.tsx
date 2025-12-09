@@ -84,6 +84,12 @@ export default function Navbar() {
                       </Link>
                     </Button>
                     <Button variant="ghost" size="sm" asChild>
+                      <Link to="/admin/messages">
+                        <Users className="h-4 w-4 mr-2" />
+                        Messages
+                      </Link>
+                    </Button>
+                    <Button variant="ghost" size="sm" asChild>
                       <Link to="/admin/wallets">
                         <Wallet className="h-4 w-4 mr-2" />
                         Wallets

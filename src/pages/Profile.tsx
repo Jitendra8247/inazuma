@@ -233,7 +233,7 @@ export default function Profile() {
             />
             <StatsCard
               title="Total Earnings"
-              value={`₹${((currentUser?.stats.totalEarnings || 0) / 1000).toFixed(0)}K`}
+              value={`₹${(currentUser?.stats.totalEarnings || 0).toLocaleString()}`}
               icon={Wallet}
               variant="secondary"
               index={2}
